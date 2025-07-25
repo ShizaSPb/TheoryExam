@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.drivingexam.theoryexam.HomeFragment"
+        android:label="Главная">
+        
+        <!-- Действие для перехода к TheoryFragment -->
+        <action
+            android:id="@+id/action_home_to_theory"
+            app:destination="@id/theoryFragment" />
+            
+        <!-- Действие для перехода к ExamFragment -->
+        <action
+            android:id="@+id/action_home_to_exam"
+            app:destination="@id/examFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/theoryFragment"
+        android:name="com.drivingexam.theoryexam.TheoryFragment"
+        android:label="Теория" />
+
+    <fragment
+        android:id="@+id/examFragment"
+        android:name="com.drivingexam.theoryexam.ExamFragment"
+        android:label="Экзамен" />
+</navigation>
