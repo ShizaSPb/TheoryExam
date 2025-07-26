@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("androidx.navigation.safeargs.kotlin")
+    id("kotlin-parcelize")
 }
 
 android {
@@ -64,4 +66,5 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.androidx.recyclerview)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlin.parcelize.runtime)
 }

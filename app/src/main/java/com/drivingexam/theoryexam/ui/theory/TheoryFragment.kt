@@ -7,16 +7,20 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.drivingexam.theoryexam.data.QuestionData
+import com.drivingexam.theoryexam.R
+import com.drivingexam.theoryexam.data.Question
 import com.drivingexam.theoryexam.databinding.FragmentTheoryBinding
 import com.drivingexam.theoryexam.ui.theory.adapters.CategoriesAdapter
 import com.drivingexam.theoryexam.ui.theory.adapters.SubcategoriesAdapter
 import kotlinx.coroutines.launch
+import com.drivingexam.theoryexam.data.QuestionData
 
 class TheoryFragment : Fragment() {
     private var _binding: FragmentTheoryBinding? = null
     private val binding get() = _binding!!
+    private lateinit var questionsMap: Map<String, Map<String, List<Question>>>
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,23 +39,36 @@ class TheoryFragment : Fragment() {
             rvSubcategories.layoutManager = LinearLayoutManager(requireContext())
 
             lifecycleScope.launch {
-                val questionsMap = QuestionData.loadQuestions(requireContext())
-                setupAdapters(questionsMap)
+                questionsMap = QuestionData.loadQuestions(requireContext())
+                setupAdapters()
             }
         }
     }
 
-    private fun setupAdapters(questionsMap: Map<String, Map<String, List<com.drivingexam.theoryexam.data.Question>>>) {
+    private fun setupAdapters() {
         binding.rvCategories.adapter = CategoriesAdapter(
             categories = questionsMap.keys.toList(),
             onClick = { category ->
                 questionsMap[category]?.let { subcategories ->
                     binding.rvSubcategories.adapter = SubcategoriesAdapter(
                         subcategories = subcategories.keys.toList(),
-                        onSubcategoryClick = { /* Обработка выбора */ }
+                        onSubcategoryClick = { subcategory ->
+                            val questions = questionsMap[category]?.get(subcategory) ?: emptyList()
+                            navigateToQuestionList(questions)
+                        }
                     )
                 }
             }
+        )
+    }
+
+    private fun navigateToQuestionList(questions: List<Question>) {
+        val bundle = Bundle().apply {
+            putParcelableArray("questions", questions.toTypedArray())
+        }
+        findNavController().navigate(
+            R.id.action_theoryFragment_to_questionListFragment,
+            bundle
         )
     }
 

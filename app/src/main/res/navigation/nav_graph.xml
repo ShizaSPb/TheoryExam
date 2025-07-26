@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
     app:startDestination="@id/homeFragment">
 
@@ -9,12 +10,10 @@
         android:name="com.drivingexam.theoryexam.ui.HomeFragment"
         android:label="Главная">
         
-        <!-- Действие для перехода к TheoryFragment -->
         <action
             android:id="@+id/action_home_to_theory"
             app:destination="@id/theoryFragment" />
             
-        <!-- Действие для перехода к ExamFragment -->
         <action
             android:id="@+id/action_home_to_exam"
             app:destination="@id/examFragment" />
@@ -23,10 +22,30 @@
     <fragment
         android:id="@+id/theoryFragment"
         android:name="com.drivingexam.theoryexam.ui.theory.TheoryFragment"
-        android:label="Теория" />
+        android:label="Теория">
+        
+        <action
+            android:id="@+id/action_theoryFragment_to_questionListFragment"
+            app:destination="@id/questionListFragment">
+            <argument
+                android:name="questions"
+                app:argType="com.drivingexam.theoryexam.data.Question[]" />
+        </action>
+    </fragment>
 
     <fragment
         android:id="@+id/examFragment"
         android:name="com.drivingexam.theoryexam.ui.ExamFragment"
         android:label="Экзамен" />
+		
+    <fragment
+        android:id="@+id/questionListFragment"
+        android:name="com.drivingexam.theoryexam.ui.theory.QuestionListFragment"
+        android:label="Вопросы"
+        tools:layout="@layout/fragment_question_list">
+        
+        <argument
+            android:name="questions"
+            app:argType="com.drivingexam.theoryexam.data.Question[]" />
+    </fragment>
 </navigation>
