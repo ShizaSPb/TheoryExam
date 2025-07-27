@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--suppress ALL -->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <!-- Главный экран -->
+    <!--suppress AndroidDomInspection -->
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.drivingexam.theoryexam.ui.HomeFragment"
+        android:label="@string/title_home"
+        tools:layout="@layout/fragment_home">
+        
+        <action
+            android:id="@+id/action_home_to_theory"
+            app:destination="@id/theoryFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+            
+        <action
+            android:id="@+id/action_home_to_exam"
+            app:destination="@id/examFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
+
+    <!-- Экран теории (выбор категорий) -->
+    <fragment
+        android:id="@+id/theoryFragment"
+        android:name="com.drivingexam.theoryexam.ui.theory.TheoryFragment"
+        android:label="@string/title_theory"
+        tools:layout="@layout/fragment_theory">
+        
+        <action
+            android:id="@+id/action_theoryFragment_to_questionFragment"
+            app:destination="@id/questionFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right">
+            
+            <argument
+                android:name="question"
+                app:argType="com.drivingexam.theoryexam.data.Question" />
+                
+            <argument
+                android:name="allQuestions"
+                app:argType="com.drivingexam.theoryexam.data.Question[]" />
+        </action>
+    </fragment>
+
+    <!-- Экзамен -->
+    <!--suppress AndroidDomInspection -->
+    <fragment
+        android:id="@+id/examFragment"
+        android:name="com.drivingexam.theoryexam.ui.ExamFragment"
+        android:label="@string/title_exam"
+        tools:layout="@layout/fragment_exam" />
+
+    <!-- Экран вопроса -->
+    <fragment
+        android:id="@+id/questionFragment"
+        android:name="com.drivingexam.theoryexam.ui.theory.QuestionFragment"
+        android:label="@string/title_question"
+        tools:layout="@layout/fragment_question">
+        
+        <argument
+            android:name="question"
+            app:argType="com.drivingexam.theoryexam.data.Question" />
+            
+        <argument
+            android:name="allQuestions"
+            app:argType="com.drivingexam.theoryexam.data.Question[]" />
+            
+        <action
+            android:id="@+id/action_questionFragment_self"
+            app:destination="@id/questionFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right">
+            
+            <argument
+                android:name="question"
+                app:argType="com.drivingexam.theoryexam.data.Question" />
+                
+            <argument
+                android:name="allQuestions"
+                app:argType="com.drivingexam.theoryexam.data.Question[]" />
+        </action>
+        
+        <action
+            android:id="@+id/action_questionFragment_to_theoryFragment"
+            app:destination="@id/theoryFragment"
+            app:popUpTo="@id/theoryFragment"
+            app:popUpToInclusive="false"
+            app:enterAnim="@anim/slide_in_left"
+            app:exitAnim="@anim/slide_out_right"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
+</navigation>
