@@ -1,18 +1,17 @@
 package com.drivingexam.theoryexam.ui.theory
 
-import android.os.Build
 import android.os.Bundle
-import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.RadioButton
-import android.widget.Toast
+import android.widget.*
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.drivingexam.theoryexam.R
-import com.drivingexam.theoryexam.databinding.FragmentQuestionBinding
 import com.drivingexam.theoryexam.data.Question
+import com.drivingexam.theoryexam.databinding.FragmentQuestionBinding
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
@@ -22,6 +21,7 @@ class QuestionFragment : Fragment() {
     private lateinit var currentQuestion: Question
     private lateinit var allQuestions: List<Question>
     private var currentQuestionIndex = 0
+    private val selectedAnswers = mutableSetOf<String>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -38,50 +38,28 @@ class QuestionFragment : Fragment() {
         setupQuestion()
         setupNavigation()
         setupAnswerChecking()
-
-        Log.d("QUESTIONS_DEBUG", "Total questions: ${allQuestions.size}")
-        Log.d("QUESTIONS_DEBUG", "Current index: $currentQuestionIndex")
     }
 
     private fun parseArguments() {
-        try {
-            arguments?.let { args ->
-                // Получаем текущий вопрос
-                currentQuestion = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    args.getParcelable("question", Question::class.java)
-                } else {
-                    @Suppress("DEPRECATION")
-                    args.getParcelable("question")
-                } ?: throw IllegalArgumentException("Question argument is missing")
+        arguments?.let { args ->
+            currentQuestion = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                args.getParcelable("question", Question::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                args.getParcelable("question")
+            } ?: throw IllegalArgumentException("Question argument is missing")
 
-                // Получаем JSON строку
-                val questionsJson = args.getString("allQuestions")
-                    ?: throw IllegalArgumentException("Questions JSON is missing")
+            val questionsJson = args.getString("allQuestions")
+                ?: throw IllegalArgumentException("Questions JSON is missing")
 
-                Log.d("JSON_DEBUG", "Received JSON length: ${questionsJson.length}")
+            val listType = object : TypeToken<List<Question>>() {}.type
+            allQuestions = Gson().fromJson(questionsJson, listType)
+                ?: throw IllegalStateException("Parsed null questions list")
 
-                // Парсим список вопросов
-                val listType = object : TypeToken<List<Question>>() {}.type
-                allQuestions = Gson().fromJson<List<Question>>(questionsJson, listType)
-                    ?: throw IllegalStateException("Parsed null questions list")
-
-                // Находим индекс текущего вопроса
-                currentQuestionIndex = allQuestions.indexOfFirst {
-                    it.questionId == currentQuestion.questionId
-                }.coerceAtLeast(0)
-
-                Log.d("QUESTIONS_LOADED", "Loaded ${allQuestions.size} questions. Current index: $currentQuestionIndex")
-
-            } ?: throw IllegalStateException("Fragment arguments are null")
-        } catch (e: Exception) {
-            Log.e("PARSE_ERROR", "Failed to parse questions: ${e.javaClass.simpleName}", e)
-            showErrorAndGoBack("Error loading questions: ${e.localizedMessage}")
+            currentQuestionIndex = allQuestions.indexOfFirst {
+                it.questionId == currentQuestion.questionId
+            }.coerceAtLeast(0)
         }
-    }
-
-    private fun showErrorAndGoBack(message: String) {
-        Toast.makeText(requireContext(), "Error: $message", Toast.LENGTH_LONG).show()
-        findNavController().popBackStack()
     }
 
     private fun setupQuestion() {
@@ -90,61 +68,112 @@ class QuestionFragment : Fragment() {
             questionText.text = currentQuestion.question
             pointsText.text = "Број поена: ${currentQuestion.points}"
 
+            // Настройка предупреждения о множественных ответах
             if (currentQuestion.correctIds.size > 1) {
                 multipleAnswersWarning.visibility = View.VISIBLE
-                multipleAnswersWarning.text = "Број потребних одговора: ${currentQuestion.correctIds.size}"
+                multipleAnswersWarning.text = "Максимално ${currentQuestion.correctIds.size} одговора"
+                choicesGroup.orientation = LinearLayout.VERTICAL
             } else {
                 multipleAnswersWarning.visibility = View.GONE
+                choicesGroup.orientation = LinearLayout.VERTICAL
             }
 
+            // Очистка предыдущих вариантов
             choicesGroup.removeAllViews()
+            selectedAnswers.clear()
+
+            // Создание элементов выбора
             currentQuestion.choices.forEach { choice ->
-                val radioButton = layoutInflater.inflate(
-                    R.layout.item_choice,
-                    choicesGroup,
-                    false
-                ) as RadioButton
-                radioButton.text = choice.answer
-                radioButton.id = View.generateViewId()
-                choicesGroup.addView(radioButton)
+                val choiceView = if (currentQuestion.correctIds.size > 1) {
+                    CheckBox(requireContext()).apply {
+                        text = choice.answer
+                        id = View.generateViewId()
+                        tag = choice.id
+
+                        setOnCheckedChangeListener { buttonView, isChecked ->
+                            if (isChecked) {
+                                if (selectedAnswers.size < currentQuestion.correctIds.size) {
+                                    selectedAnswers.add(choice.id)
+                                    updateChoiceViewsState()
+                                } else {
+                                    buttonView.isChecked = false
+                                    showChoiceLimitToast()
+                                }
+                            } else {
+                                selectedAnswers.remove(choice.id)
+                                updateChoiceViewsState()
+                            }
+                        }
+                        setTextAppearance(R.style.ChoiceCheckBox)
+                    }
+                } else {
+                    RadioButton(requireContext()).apply {
+                        text = choice.answer
+                        id = View.generateViewId()
+                        setTextAppearance(R.style.ChoiceRadioButton)
+                    }
+                }
+
+                // Общие настройки для обоих типов
+                choiceView.apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        bottomMargin = dpToPx(16)
+                    }
+                    setTextColor(ContextCompat.getColor(requireContext(), R.color.black))
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                    setPadding(dpToPx(16), dpToPx(12), dpToPx(16), dpToPx(12))
+                }
+
+                choicesGroup.addView(choiceView)
+            }
+            updateChoiceViewsState()
+        }
+    }
+
+    private fun showChoiceLimitToast() {
+        Toast.makeText(
+            requireContext(),
+            "Максимално ${currentQuestion.correctIds.size} одговора",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun updateChoiceViewsState() {
+        if (currentQuestion.correctIds.size <= 1) return
+
+        for (i in 0 until binding.choicesGroup.childCount) {
+            val view = binding.choicesGroup.getChildAt(i)
+            if (view is CheckBox) {
+                val choiceId = view.tag as? String
+                view.isEnabled = selectedAnswers.size < currentQuestion.correctIds.size ||
+                        selectedAnswers.contains(choiceId)
+                view.alpha = if (view.isEnabled) 1f else 0.5f
             }
         }
     }
 
-    private fun setupNavigation() {
-        binding.prevButton.setOnClickListener {
-            if (currentQuestionIndex > 0) {
-                currentQuestionIndex--
-                currentQuestion = allQuestions[currentQuestionIndex]
-                setupQuestion()
-                updateNavigationButtons()
-            }
-        }
-
-        binding.nextButton.setOnClickListener {
-            if (currentQuestionIndex < allQuestions.size - 1) {
-                currentQuestionIndex++
-                currentQuestion = allQuestions[currentQuestionIndex]
-                setupQuestion()
-                updateNavigationButtons()
-            }
-        }
-
-        updateNavigationButtons()
-    }
-
-    private fun updateNavigationButtons() {
-        binding.prevButton.isEnabled = currentQuestionIndex > 0
-        binding.nextButton.isEnabled = currentQuestionIndex < allQuestions.size - 1
+    private fun dpToPx(dp: Int): Int {
+        return TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            dp.toFloat(),
+            resources.displayMetrics
+        ).toInt()
     }
 
     private fun setupAnswerChecking() {
         binding.checkAnswerButton.setOnClickListener {
-            checkAnswer()
+            if (currentQuestion.correctIds.size > 1) {
+                checkMultipleChoiceAnswer()
+            } else {
+                checkSingleChoiceAnswer()
+            }
         }
     }
 
-    private fun checkAnswer() {
+    private fun checkSingleChoiceAnswer() {
         val selectedId = binding.choicesGroup.checkedRadioButtonId
         if (selectedId == -1) {
             Toast.makeText(requireContext(), "Молимо изаберите одговор", Toast.LENGTH_SHORT).show()
@@ -155,18 +184,65 @@ class QuestionFragment : Fragment() {
         val selectedIndex = binding.choicesGroup.indexOfChild(selectedRadioButton)
         val isCorrect = currentQuestion.choices[selectedIndex].isCorrect
 
+        showAnswerResult(isCorrect)
+    }
+
+    private fun checkMultipleChoiceAnswer() {
+        if (selectedAnswers.isEmpty()) {
+            Toast.makeText(requireContext(), "Молимо изаберите одговоре", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Проверяем, что выбраны ВСЕ правильные ответы и ничего лишнего
+        val isFullyCorrect = selectedAnswers.size == currentQuestion.correctIds.size &&
+                selectedAnswers.containsAll(currentQuestion.correctIds)
+
+        showAnswerResult(isFullyCorrect)
+    }
+
+    private fun showAnswerResult(isCorrect: Boolean) {
         if (isCorrect) {
             Toast.makeText(requireContext(), "Тачно!", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(requireContext(), "Нетачно", Toast.LENGTH_SHORT).show()
-            // Показываем правильный ответ
-            currentQuestion.choices.forEachIndexed { index, choice ->
-                if (choice.isCorrect) {
-                    val correctButton = binding.choicesGroup.getChildAt(index) as RadioButton
-                    correctButton.setBackgroundColor(resources.getColor(R.color.green))
-                }
+            highlightCorrectAnswers()
+        }
+    }
+
+    private fun highlightCorrectAnswers() {
+        currentQuestion.choices.forEachIndexed { index, choice ->
+            if (choice.isCorrect) {
+                val answerView = binding.choicesGroup.getChildAt(index)
+                answerView.setBackgroundColor(
+                    ContextCompat.getColor(requireContext(), R.color.green_light))
             }
         }
+    }
+
+    private fun setupNavigation() {
+        binding.prevButton.setOnClickListener {
+            if (currentQuestionIndex > 0) {
+                navigateToQuestion(currentQuestionIndex - 1)
+            }
+        }
+
+        binding.nextButton.setOnClickListener {
+            if (currentQuestionIndex < allQuestions.size - 1) {
+                navigateToQuestion(currentQuestionIndex + 1)
+            }
+        }
+    }
+
+    private fun navigateToQuestion(index: Int) {
+        currentQuestionIndex = index
+        currentQuestion = allQuestions[index]
+        setupQuestion()
+        updateNavigationButtons()
+    }
+
+    private fun updateNavigationButtons() {
+        binding.prevButton.isEnabled = currentQuestionIndex > 0
+        binding.nextButton.isEnabled = currentQuestionIndex < allQuestions.size - 1
     }
 
     override fun onDestroyView() {
