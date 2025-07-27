@@ -5,9 +5,10 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import android.widget.RadioButton
 import android.widget.Toast
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.drivingexam.theoryexam.R
@@ -90,19 +91,22 @@ class QuestionFragment : Fragment() {
 
     private fun setupQuestion() {
         with(binding) {
+            // Устанавливаем заголовок с номером вопроса
+            questionHeader.text = "Питање: ${currentQuestionIndex + 1}/${allQuestions.size}"
+
             questionText.text = currentQuestion.question
-            pointsText.text = getString(R.string.points_format, currentQuestion.points)
+            pointsText.text = "Број поена: ${currentQuestion.points}"
 
             currentQuestion.image?.let { imageUrl ->
                 imageContainer.visibility = View.VISIBLE
-                // Здесь должна быть загрузка изображения
+                // Загрузка изображения
             } ?: run {
                 imageContainer.visibility = View.GONE
             }
 
             if (currentQuestion.correctIds.size > 1) {
                 multipleAnswersWarning.visibility = View.VISIBLE
-                multipleAnswersWarning.text = getString(R.string.multiple_answers_warning)
+                multipleAnswersWarning.text = "Број потребних одговора: ${currentQuestion.correctIds.size}"
             } else {
                 multipleAnswersWarning.visibility = View.GONE
             }
@@ -123,17 +127,22 @@ class QuestionFragment : Fragment() {
 
     private fun setupNavigation() {
         with(binding) {
-            prevButton.isEnabled = currentQuestionIndex > 0
-            prevButton.setOnClickListener {
-                showQuestion(allQuestions[currentQuestionIndex - 1])
+            prevButton.apply {
+                isEnabled = currentQuestionIndex > 0
+                setOnClickListener {
+                    showQuestion(allQuestions[currentQuestionIndex - 1])
+                }
             }
 
-            nextButton.isEnabled = currentQuestionIndex < allQuestions.size - 1
-            nextButton.setOnClickListener {
-                showQuestion(allQuestions[currentQuestionIndex + 1])
+            nextButton.apply {
+                isEnabled = currentQuestionIndex < allQuestions.size - 1
+                setOnClickListener {
+                    showQuestion(allQuestions[currentQuestionIndex + 1])
+                }
             }
         }
     }
+
 
     private fun setupAnswerChecking() {
         binding.checkAnswerButton.setOnClickListener {
@@ -160,21 +169,39 @@ class QuestionFragment : Fragment() {
     }
 
     private fun showQuestion(question: Question) {
-        try {
-            val gson = Gson()
-            val args = bundleOf(
-                "question" to question,
-                "allQuestions" to gson.toJson(allQuestions)
-            )
+        // Создаем анимацию для контента
+        val slideOut = AnimationUtils.loadAnimation(requireContext(),
+            if (question == allQuestions[currentQuestionIndex + 1]) R.anim.slide_out_left
+            else R.anim.slide_out_right)
 
-            findNavController().navigate(
-                R.id.action_questionFragment_self,
-                args
-            )
-        } catch (e: Exception) {
-            Log.e("QuestionFragment", "Navigation error", e)
-            Toast.makeText(requireContext(), "Error navigating to question", Toast.LENGTH_SHORT).show()
-        }
+        val slideIn = AnimationUtils.loadAnimation(requireContext(),
+            if (question == allQuestions[currentQuestionIndex + 1]) R.anim.slide_in_right
+            else R.anim.slide_in_left)
+
+        // Применяем анимацию только к контейнеру с контентом
+        binding.questionContentContainer.startAnimation(slideOut)
+
+        slideOut.setAnimationListener(object : Animation.AnimationListener {
+            override fun onAnimationStart(animation: Animation?) {}
+
+            override fun onAnimationEnd(animation: Animation?) {
+                // После завершения анимации скрытия, обновляем данные
+                currentQuestion = question
+                currentQuestionIndex = allQuestions.indexOfFirst { it.question == currentQuestion.question }
+                    .takeIf { it != -1 } ?: 0
+
+                setupQuestion()
+
+                // Запускаем анимацию появления нового контента
+                binding.questionContentContainer.startAnimation(slideIn)
+
+                // Обновляем состояние кнопок
+                binding.prevButton.isEnabled = currentQuestionIndex > 0
+                binding.nextButton.isEnabled = currentQuestionIndex < allQuestions.size - 1
+            }
+
+            override fun onAnimationRepeat(animation: Animation?) {}
+        })
     }
 
     override fun onDestroyView() {

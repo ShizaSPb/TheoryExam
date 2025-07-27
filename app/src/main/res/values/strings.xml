@@ -1,9 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Теория ПДД</string>
     <string name="title_home">Главная</string>
     <string name="title_theory">Теория</string>
     <string name="title_exam">Экзамен</string>
     <string name="title_question">Вопрос</string>
-    <string name="points_format">Баллы: %s</string>
-    <string name="multiple_answers_warning">Выберите несколько правильных ответов</string>
+    <string name="question_header">Питање: %d/%d</string>
+
+    <!-- Полные названия кнопок -->
+    <string name="prev_question">Назад</string>
+    <string name="next_question">Напред</string>
+
+    <!-- Другие строки -->
+    <string name="show_answer">Прикажи одговор</string>
+    <string name="points_format">Број поена: %s</string>
+    <string name="multiple_answers_warning">Број потребних одговора: %d</string>
 </resources>

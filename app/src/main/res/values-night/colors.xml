@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Основные цвета для темной темы -->
+    <color name="purple_500">#FFBB86FC</color>
+    <color name="teal_700">#FF03DAC5</color>
+    <color name="red">#FF5252</color>
+
+    <!-- Цвета для выделенных элементов в темной теме -->
     <color name="selected_item_background">#1E88E5</color>  <!-- Более темный голубой -->
     <color name="selected_item_text">#FFFFFF</color>        <!-- Белый текст -->
 </resources>

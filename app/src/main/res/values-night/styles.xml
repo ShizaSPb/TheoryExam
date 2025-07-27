@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Переопределяем только необходимые стили для темной темы -->
+    <style name="NavigationButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">@color/purple_200</item>
+        <item name="android:textColor">@color/purple_200</item>
+    </style>
+
+    <style name="CheckAnswerButton" parent="ButtonStyle">
+        <item name="backgroundTint">@color/purple_200</item>
+        <item name="android:textColor">@color/black</item>
+    </style>
+
+    <style name="CategoryItem.Selected">
+        <item name="android:background">@color/selected_item_background</item>
+        <item name="android:textColor">@color/selected_item_text</item>
+    </style>
+</resources>

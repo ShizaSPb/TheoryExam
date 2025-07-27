@@ -2,144 +2,159 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <ScrollView
-        android:id="@+id/scrollView"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:orientation="vertical">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <!-- Заголовок с номером вопроса -->
+        <TextView
+            android:id="@+id/questionHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp">
+            android:text="Питање: 1/1"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:padding="8dp"/>
 
-            <!-- Блок с баллами вопроса -->
-            <TextView
-                android:id="@+id/pointsText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Баллы: 1"
-                android:textSize="16sp"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintStart_toStartOf="parent"/>
+        <!-- Контейнер для контента вопроса -->
+        <FrameLayout
+            android:id="@+id/questionContentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
-            <!-- Текст вопроса -->
-            <TextView
-                android:id="@+id/questionText"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="Текст вопроса"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                app:layout_constraintTop_toBottomOf="@id/pointsText"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:layout_marginTop="8dp"/>
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fillViewport="true">
 
-            <!-- Контейнер для изображения -->
-            <FrameLayout
-                android:id="@+id/imageContainer"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/questionText"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintWidth_default="percent"
-                app:layout_constraintWidth_percent="0.8"
-                android:layout_marginTop="16dp">
-
-                <ProgressBar
-                    android:id="@+id/imageProgressBar"
-                    android:layout_width="wrap_content"
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:visibility="gone"/>
+                    android:padding="16dp">
 
-                <ImageView
-                    android:id="@+id/questionImage"
-                    android:layout_width="200dp"
-                    android:layout_height="200dp"
-                    android:layout_gravity="center"
-                    android:scaleType="fitCenter"
-                    android:adjustViewBounds="true"
-                    android:visibility="gone"/>
-            </FrameLayout>
+                    <!-- Блок с баллами вопроса -->
+                    <TextView
+                        android:id="@+id/pointsText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Број поена: 1"
+                        android:textSize="16sp"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"/>
 
-            <!-- Предупреждение о множественных ответах -->
-            <TextView
-                android:id="@+id/multipleAnswersWarning"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                style="@style/PointsTextStyle"
-                android:textStyle="italic"
-                android:visibility="gone"
-                app:layout_constraintTop_toBottomOf="@id/imageContainer"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:layout_marginTop="8dp"/>
+                    <!-- Текст вопроса -->
+                    <TextView
+                        android:id="@+id/questionText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:text="Текст вопроса"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        app:layout_constraintTop_toBottomOf="@id/pointsText"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        android:layout_marginTop="8dp"/>
 
-            <!-- Варианты ответов -->
-            <RadioGroup
-                android:id="@+id/choicesGroup"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                app:layout_constraintTop_toBottomOf="@id/multipleAnswersWarning"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:layout_marginTop="16dp"
-                app:layout_constraintBottom_toTopOf="@id/checkAnswerButton"
-                android:layout_marginBottom="16dp">
+                    <!-- Контейнер для изображения -->
+                    <FrameLayout
+                        android:id="@+id/imageContainer"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintTop_toBottomOf="@id/questionText"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintWidth_default="percent"
+                        app:layout_constraintWidth_percent="0.8"
+                        android:layout_marginTop="16dp">
 
-                <!-- Варианты будут добавляться динамически -->
-            </RadioGroup>
+                        <ProgressBar
+                            android:id="@+id/imageProgressBar"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:visibility="gone"/>
 
-            <!-- Кнопка проверки ответа -->
-            <Button
-                android:id="@+id/checkAnswerButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="Проверить ответ"
-                android:backgroundTint="@color/purple_500"
-                android:textColor="@color/white"
-                android:layout_marginBottom="8dp"
-                app:layout_constraintBottom_toTopOf="@id/navigationButtons"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"/>
+                        <ImageView
+                            android:id="@+id/questionImage"
+                            android:layout_width="200dp"
+                            android:layout_height="200dp"
+                            android:layout_gravity="center"
+                            android:scaleType="fitCenter"
+                            android:adjustViewBounds="true"
+                            android:visibility="gone"/>
+                    </FrameLayout>
 
-            <!-- Группа кнопок навигации (в самом низу) -->
-            <LinearLayout
-                android:id="@+id/navigationButtons"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginBottom="16dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+                    <!-- Предупреждение о множественных ответах -->
+                    <TextView
+                        android:id="@+id/multipleAnswersWarning"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:text="Број потребних одговора: 2"
+                        android:textSize="14sp"
+                        android:textColor="@color/red"
+                        android:textStyle="italic"
+                        android:visibility="gone"
+                        app:layout_constraintTop_toBottomOf="@id/imageContainer"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        android:layout_marginTop="8dp"/>
 
-                <Button
-                    android:id="@+id/prevButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:text="Назад"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    android:backgroundTint="@color/gray_light"
-                    android:textColor="@color/black"
-                    android:enabled="false"/>
+                    <!-- Варианты ответов -->
+                    <RadioGroup
+                        android:id="@+id/choicesGroup"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        app:layout_constraintTop_toBottomOf="@id/multipleAnswersWarning"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        android:layout_marginTop="16dp">
+                    </RadioGroup>
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </ScrollView>
+        </FrameLayout>
 
-                <Button
-                    android:id="@+id/nextButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:text="Вперед"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:backgroundTint="@color/purple_500"
-                    android:textColor="@color/white"/>
-            </LinearLayout>
-        </androidx.constraintlayout.widget.ConstraintLayout>
-    </ScrollView>
+        <!-- Кнопка проверки ответа -->
+        <Button
+            android:id="@+id/checkAnswerButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Прикажи одговор"
+            android:backgroundTint="@color/purple_500"
+            android:textColor="@color/white"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Группа кнопок навигации -->
+        <LinearLayout
+			android:id="@+id/navigationButtons"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:orientation="horizontal"
+			android:gravity="center"
+			android:layout_margin="16dp"
+			android:baselineAligned="false">
+
+			<Button
+				android:id="@+id/prevButton"
+				style="@style/NavigationButton.Prev"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_weight="1"
+				android:layout_marginEnd="8dp"
+				android:text="@string/prev_question"
+				android:enabled="false"/>
+
+			<Button
+				android:id="@+id/nextButton"
+				style="@style/NavigationButton.Next"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_weight="1"
+				android:layout_marginStart="8dp"
+				android:text="@string/next_question"/>
+		</LinearLayout>
+    </LinearLayout>
 </layout>
