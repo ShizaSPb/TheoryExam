@@ -1,27 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--suppress ALL, AndroidDomInspection -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="16dp"
-    tools:context=".ui.HomeFragment">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <Button
-        android:id="@+id/btn_theory"
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Теоретическая подготовка"
-        android:layout_marginBottom="16dp"
-        android:textSize="18sp"/>
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true">
 
-    <Button
-        android:id="@+id/btn_exam"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Симуляция экзамена"
-        android:textSize="18sp"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="16dp">
 
-</LinearLayout>
+            <Button
+                android:id="@+id/btn_theory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Теоретическая подготовка"
+                android:layout_marginBottom="16dp"
+                android:textSize="18sp"/>
+
+            <Button
+                android:id="@+id/btn_exam"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Симуляция экзамена"
+                android:textSize="18sp"/>
+        </LinearLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</layout>

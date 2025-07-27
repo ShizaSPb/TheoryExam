@@ -73,4 +73,5 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlin.parcelize.runtime)
     implementation(libs.material)
+    implementation(libs.androidx.coordinatorlayout)
 }
