@@ -8,30 +8,31 @@ import androidx.recyclerview.widget.RecyclerView
 import com.drivingexam.theoryexam.R
 
 class SubcategoriesAdapter(
-    private val subcategories: List<String>,
-    private val onSubcategoryClick: (String) -> Unit
+    private var subcategories: List<String>,
+    private val onClick: (String) -> Unit
 ) : RecyclerView.Adapter<SubcategoriesAdapter.ViewHolder>() {
 
-    // ViewHolder для кэширования элементов представления
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val title: TextView = view.findViewById(R.id.tvSubcategoryTitle)
     }
 
-    // Создание новых ViewHolder'ов
+    fun updateData(newSubcategories: List<String>) {
+        subcategories = newSubcategories
+        notifyDataSetChanged()
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_subcategory, parent, false)
         return ViewHolder(view)
     }
 
-    // Заполнение данных в элементы
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.title.text = subcategories[position]
         holder.itemView.setOnClickListener {
-            onSubcategoryClick(subcategories[position])
+            onClick(subcategories[position])
         }
     }
 
-    // Общее количество элементов
-    override fun getItemCount(): Int = subcategories.size
+    override fun getItemCount() = subcategories.size
 }

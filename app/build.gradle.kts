@@ -10,6 +10,11 @@ android {
     namespace = "com.drivingexam.theoryexam"
     compileSdk = 36
 
+    buildFeatures {
+        dataBinding = true
+        viewBinding = true
+    }
+
     defaultConfig {
         applicationId = "com.drivingexam.theoryexam"
         minSdk = 28
@@ -67,4 +72,5 @@ dependencies {
     implementation(libs.androidx.recyclerview)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlin.parcelize.runtime)
+    implementation(libs.material)
 }

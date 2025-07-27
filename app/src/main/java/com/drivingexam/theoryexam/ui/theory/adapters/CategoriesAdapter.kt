@@ -8,12 +8,17 @@ import androidx.recyclerview.widget.RecyclerView
 import com.drivingexam.theoryexam.R
 
 class CategoriesAdapter(
-    private val categories: List<String>,
+    private var categories: List<String>,
     private val onClick: (String) -> Unit
 ) : RecyclerView.Adapter<CategoriesAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val title: TextView = view.findViewById(R.id.tvCategoryTitle)
+    }
+
+    fun updateData(newCategories: List<String>) {
+        categories = newCategories
+        notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -24,8 +29,10 @@ class CategoriesAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.title.text = categories[position]
-        holder.itemView.setOnClickListener { onClick(categories[position]) }
+        holder.itemView.setOnClickListener {
+            onClick(categories[position])
+        }
     }
 
-    override fun getItemCount(): Int = categories.size
+    override fun getItemCount() = categories.size
 }
