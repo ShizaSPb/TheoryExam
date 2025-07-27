@@ -1,14 +1,23 @@
 package com.drivingexam.theoryexam.ui.theory
 
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
+import android.graphics.drawable.Drawable
+import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.core.content.ContextCompat
+import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import com.bumptech.glide.Glide
 import com.drivingexam.theoryexam.R
 import com.drivingexam.theoryexam.data.Question
 import com.drivingexam.theoryexam.databinding.FragmentQuestionBinding
@@ -64,6 +73,7 @@ class QuestionFragment : Fragment() {
 
     private fun setupQuestion() {
         with(binding) {
+            // Установка основных данных вопроса
             questionHeader.text = "Питање: ${currentQuestionIndex + 1}/${allQuestions.size}"
             questionText.text = currentQuestion.question
             pointsText.text = "Број поена: ${currentQuestion.points}"
@@ -81,6 +91,20 @@ class QuestionFragment : Fragment() {
             // Очистка предыдущих вариантов
             choicesGroup.removeAllViews()
             selectedAnswers.clear()
+
+            // Загрузка изображения вопроса (если есть)
+            if (!currentQuestion.image.isNullOrEmpty() || !currentQuestion.imageLocal.isNullOrEmpty()) {
+                imageContainer.visibility = View.VISIBLE
+                questionImage.visibility = View.VISIBLE
+                imageProgressBar.visibility = View.VISIBLE
+
+                val imageUrl = currentQuestion.imageLocal ?: currentQuestion.image
+                loadQuestionImage(imageUrl)
+            } else {
+                imageContainer.visibility = View.GONE
+                questionImage.visibility = View.GONE
+                imageProgressBar.visibility = View.GONE
+            }
 
             // Создание элементов выбора
             currentQuestion.choices.forEach { choice ->
@@ -114,7 +138,7 @@ class QuestionFragment : Fragment() {
                     }
                 }
 
-                // Общие настройки для обоих типов
+                // Общие настройки для вариантов ответа
                 choiceView.apply {
                     layoutParams = LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
@@ -129,8 +153,83 @@ class QuestionFragment : Fragment() {
 
                 choicesGroup.addView(choiceView)
             }
+
             updateChoiceViewsState()
         }
+    }
+
+    private fun loadQuestionImage(imageUrl: String?) {
+        if (imageUrl.isNullOrEmpty()) {
+            binding.imageContainer.visibility = View.GONE
+            return
+        }
+
+        try {
+            when {
+                imageUrl.startsWith("http") -> {
+                    Glide.with(requireContext())
+                        .load(imageUrl)
+                        .placeholder(R.drawable.placeholder_image)
+                        .error(R.drawable.error_image)
+                        .listener(object : RequestListener<Drawable> {
+                            override fun onLoadFailed(
+                                e: GlideException?,
+                                model: Any?,
+                                target: Target<Drawable>,
+                                isFirstResource: Boolean
+                            ): Boolean {
+                                binding.imageProgressBar.visibility = View.GONE
+                                return false
+                            }
+
+                            override fun onResourceReady(
+                                resource: Drawable,
+                                model: Any,
+                                target: Target<Drawable>,
+                                dataSource: DataSource,
+                                isFirstResource: Boolean
+                            ): Boolean {
+                                binding.imageProgressBar.visibility = View.GONE
+                                return false
+                            }
+                        })
+                        .into(binding.questionImage)
+                }
+
+                else -> {
+                    // Обработка локальных изображений
+                    val localPath = imageUrl.replace("\\", "/") // Заменяем обратные слэши
+                    try {
+                        // Пробуем загрузить из assets
+                        val inputStream = requireContext().assets.open(localPath)
+                        val bitmap = BitmapFactory.decodeStream(inputStream)
+                        binding.questionImage.setImageBitmap(bitmap)
+                        binding.imageProgressBar.visibility = View.GONE
+                    } catch (e: Exception) {
+                        // Пробуем загрузить как ресурс
+                        val resId = resources.getIdentifier(
+                            localPath.substringBeforeLast("."), // Удаляем расширение
+                            "drawable",
+                            requireContext().packageName
+                        )
+                        if (resId != 0) {
+                            binding.questionImage.setImageResource(resId)
+                            binding.imageProgressBar.visibility = View.GONE
+                        } else {
+                            showErrorImage()
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("IMAGE_LOAD", "Error loading image: $imageUrl", e)
+            showErrorImage()
+        }
+    }
+
+    private fun showErrorImage() {
+        binding.imageProgressBar.visibility = View.GONE
+        binding.questionImage.setImageResource(R.drawable.error_image)
     }
 
     private fun showChoiceLimitToast() {
@@ -144,13 +243,13 @@ class QuestionFragment : Fragment() {
     private fun updateChoiceViewsState() {
         if (currentQuestion.correctIds.size <= 1) return
 
-        for (i in 0 until binding.choicesGroup.childCount) {
-            val view = binding.choicesGroup.getChildAt(i)
-            if (view is CheckBox) {
-                val choiceId = view.tag as? String
-                view.isEnabled = selectedAnswers.size < currentQuestion.correctIds.size ||
-                        selectedAnswers.contains(choiceId)
-                view.alpha = if (view.isEnabled) 1f else 0.5f
+        currentQuestion.choices.forEach { choice ->
+            getChoiceView(choice.id)?.let { view ->
+                val isSelectable = selectedAnswers.size < currentQuestion.correctIds.size ||
+                        selectedAnswers.contains(choice.id)
+
+                view.isEnabled = isSelectable
+                view.alpha = if (isSelectable) 1f else 0.5f
             }
         }
     }
@@ -248,5 +347,11 @@ class QuestionFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    private fun getChoiceView(choiceId: String): CheckBox? {
+        return binding.choicesGroup.children
+            .filterIsInstance<CheckBox>()
+            .firstOrNull { it.tag == choiceId }
     }
 }

@@ -21,7 +21,7 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
+        vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -74,4 +74,6 @@ dependencies {
     implementation(libs.kotlin.parcelize.runtime)
     implementation(libs.material)
     implementation(libs.androidx.coordinatorlayout)
+    implementation (libs.glide)
+    annotationProcessor (libs.compiler)
 }

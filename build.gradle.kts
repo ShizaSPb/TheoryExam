@@ -5,3 +5,4 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     id("androidx.navigation.safeargs.kotlin") version "2.9.2" apply false
 }
+
