@@ -38,9 +38,16 @@ class TheoryViewModel : ViewModel() {
     // Получение вопросов для подкатегории
     fun getQuestionsForSubcategory(category: String, subcategory: String): List<Question> {
         return _questions.value[category]?.get(subcategory)?.also { questions ->
-            Log.d("TheoryVM", "Found ${questions.size} questions for $category/$subcategory")
+            if (questions.isEmpty()) {
+                Log.w("QUESTIONS_CHECK", "Empty questions for $category/$subcategory")
+            }
+            questions.forEach { q ->
+                if (q.choices.isEmpty()) {
+                    Log.w("QUESTION_CHECK", "Question ${q.questionId} has no choices")
+                }
+            }
         } ?: run {
-            Log.e("TheoryVM", "No questions found for $category/$subcategory")
+            Log.e("QUESTIONS_CHECK", "No questions found for $category/$subcategory")
             emptyList()
         }
     }

@@ -1,26 +1,24 @@
 package com.drivingexam.theoryexam.ui.theory
 
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.Animation
-import android.view.animation.AnimationUtils
 import android.widget.RadioButton
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.drivingexam.theoryexam.R
-import com.drivingexam.theoryexam.data.Question
 import com.drivingexam.theoryexam.databinding.FragmentQuestionBinding
+import com.drivingexam.theoryexam.data.Question
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
 class QuestionFragment : Fragment() {
     private var _binding: FragmentQuestionBinding? = null
     private val binding get() = _binding!!
-
     private lateinit var currentQuestion: Question
     private lateinit var allQuestions: List<Question>
     private var currentQuestionIndex = 0
@@ -40,69 +38,57 @@ class QuestionFragment : Fragment() {
         setupQuestion()
         setupNavigation()
         setupAnswerChecking()
+
+        Log.d("QUESTIONS_DEBUG", "Total questions: ${allQuestions.size}")
+        Log.d("QUESTIONS_DEBUG", "Current index: $currentQuestionIndex")
     }
 
     private fun parseArguments() {
-        arguments?.let { args ->
-            // Получаем текущий вопрос
-            currentQuestion = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                args.getParcelable("question", Question::class.java)
-            } else {
-                @Suppress("DEPRECATION")
-                args.getParcelable("question")
-            } ?: run {
-                showErrorAndGoBack("Question data is missing")
-                return@let
-            }
+        try {
+            arguments?.let { args ->
+                // Получаем текущий вопрос
+                currentQuestion = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    args.getParcelable("question", Question::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    args.getParcelable("question")
+                } ?: throw IllegalArgumentException("Question argument is missing")
 
-            // Получаем JSON строку и десериализуем в список вопросов
-            val questionsJson = args.getString("allQuestions") ?: run {
-                showErrorAndGoBack("Questions list is missing")
-                return@let
-            }
+                // Получаем JSON строку
+                val questionsJson = args.getString("allQuestions")
+                    ?: throw IllegalArgumentException("Questions JSON is missing")
 
-            try {
-                val type = object : TypeToken<List<Question>>() {}.type
-                allQuestions = Gson().fromJson(questionsJson, type) ?: run {
-                    showErrorAndGoBack("Failed to parse questions")
-                    return@let
-                }
-            } catch (e: Exception) {
-                Log.e("QuestionFragment", "JSON parsing error", e)
-                showErrorAndGoBack("Invalid questions data format")
-                return@let
-            }
+                Log.d("JSON_DEBUG", "Received JSON length: ${questionsJson.length}")
 
-            if (allQuestions.isEmpty()) {
-                showErrorAndGoBack("Questions list is empty")
-                return
-            }
+                // Парсим список вопросов
+                val listType = object : TypeToken<List<Question>>() {}.type
+                allQuestions = Gson().fromJson<List<Question>>(questionsJson, listType)
+                    ?: throw IllegalStateException("Parsed null questions list")
 
-            currentQuestionIndex = allQuestions.indexOfFirst { it.question == currentQuestion.question }
-                .takeIf { it != -1 } ?: 0
-        } ?: showErrorAndGoBack("No arguments provided")
+                // Находим индекс текущего вопроса
+                currentQuestionIndex = allQuestions.indexOfFirst {
+                    it.questionId == currentQuestion.questionId
+                }.coerceAtLeast(0)
+
+                Log.d("QUESTIONS_LOADED", "Loaded ${allQuestions.size} questions. Current index: $currentQuestionIndex")
+
+            } ?: throw IllegalStateException("Fragment arguments are null")
+        } catch (e: Exception) {
+            Log.e("PARSE_ERROR", "Failed to parse questions: ${e.javaClass.simpleName}", e)
+            showErrorAndGoBack("Error loading questions: ${e.localizedMessage}")
+        }
     }
 
     private fun showErrorAndGoBack(message: String) {
-        Log.e("QuestionFragment", message)
         Toast.makeText(requireContext(), "Error: $message", Toast.LENGTH_LONG).show()
         findNavController().popBackStack()
     }
 
     private fun setupQuestion() {
         with(binding) {
-            // Устанавливаем заголовок с номером вопроса
             questionHeader.text = "Питање: ${currentQuestionIndex + 1}/${allQuestions.size}"
-
             questionText.text = currentQuestion.question
             pointsText.text = "Број поена: ${currentQuestion.points}"
-
-            currentQuestion.image?.let { imageUrl ->
-                imageContainer.visibility = View.VISIBLE
-                // Загрузка изображения
-            } ?: run {
-                imageContainer.visibility = View.GONE
-            }
 
             if (currentQuestion.correctIds.size > 1) {
                 multipleAnswersWarning.visibility = View.VISIBLE
@@ -126,23 +112,31 @@ class QuestionFragment : Fragment() {
     }
 
     private fun setupNavigation() {
-        with(binding) {
-            prevButton.apply {
-                isEnabled = currentQuestionIndex > 0
-                setOnClickListener {
-                    showQuestion(allQuestions[currentQuestionIndex - 1])
-                }
-            }
-
-            nextButton.apply {
-                isEnabled = currentQuestionIndex < allQuestions.size - 1
-                setOnClickListener {
-                    showQuestion(allQuestions[currentQuestionIndex + 1])
-                }
+        binding.prevButton.setOnClickListener {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--
+                currentQuestion = allQuestions[currentQuestionIndex]
+                setupQuestion()
+                updateNavigationButtons()
             }
         }
+
+        binding.nextButton.setOnClickListener {
+            if (currentQuestionIndex < allQuestions.size - 1) {
+                currentQuestionIndex++
+                currentQuestion = allQuestions[currentQuestionIndex]
+                setupQuestion()
+                updateNavigationButtons()
+            }
+        }
+
+        updateNavigationButtons()
     }
 
+    private fun updateNavigationButtons() {
+        binding.prevButton.isEnabled = currentQuestionIndex > 0
+        binding.nextButton.isEnabled = currentQuestionIndex < allQuestions.size - 1
+    }
 
     private fun setupAnswerChecking() {
         binding.checkAnswerButton.setOnClickListener {
@@ -153,7 +147,7 @@ class QuestionFragment : Fragment() {
     private fun checkAnswer() {
         val selectedId = binding.choicesGroup.checkedRadioButtonId
         if (selectedId == -1) {
-            Toast.makeText(requireContext(), "Please select an answer", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Молимо изаберите одговор", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -162,46 +156,17 @@ class QuestionFragment : Fragment() {
         val isCorrect = currentQuestion.choices[selectedIndex].isCorrect
 
         if (isCorrect) {
-            Toast.makeText(requireContext(), "Correct!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Тачно!", Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(requireContext(), "Incorrect", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun showQuestion(question: Question) {
-        // Создаем анимацию для контента
-        val slideOut = AnimationUtils.loadAnimation(requireContext(),
-            if (question == allQuestions[currentQuestionIndex + 1]) R.anim.slide_out_left
-            else R.anim.slide_out_right)
-
-        val slideIn = AnimationUtils.loadAnimation(requireContext(),
-            if (question == allQuestions[currentQuestionIndex + 1]) R.anim.slide_in_right
-            else R.anim.slide_in_left)
-
-        // Применяем анимацию только к контейнеру с контентом
-        binding.questionContentContainer.startAnimation(slideOut)
-
-        slideOut.setAnimationListener(object : Animation.AnimationListener {
-            override fun onAnimationStart(animation: Animation?) {}
-
-            override fun onAnimationEnd(animation: Animation?) {
-                // После завершения анимации скрытия, обновляем данные
-                currentQuestion = question
-                currentQuestionIndex = allQuestions.indexOfFirst { it.question == currentQuestion.question }
-                    .takeIf { it != -1 } ?: 0
-
-                setupQuestion()
-
-                // Запускаем анимацию появления нового контента
-                binding.questionContentContainer.startAnimation(slideIn)
-
-                // Обновляем состояние кнопок
-                binding.prevButton.isEnabled = currentQuestionIndex > 0
-                binding.nextButton.isEnabled = currentQuestionIndex < allQuestions.size - 1
+            Toast.makeText(requireContext(), "Нетачно", Toast.LENGTH_SHORT).show()
+            // Показываем правильный ответ
+            currentQuestion.choices.forEachIndexed { index, choice ->
+                if (choice.isCorrect) {
+                    val correctButton = binding.choicesGroup.getChildAt(index) as RadioButton
+                    correctButton.setBackgroundColor(resources.getColor(R.color.green))
+                }
             }
-
-            override fun onAnimationRepeat(animation: Animation?) {}
-        })
+        }
     }
 
     override fun onDestroyView() {

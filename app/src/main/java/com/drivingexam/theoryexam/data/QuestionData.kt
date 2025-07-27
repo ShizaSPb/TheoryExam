@@ -1,6 +1,7 @@
 package com.drivingexam.theoryexam.data
 
 import android.content.Context
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
@@ -13,8 +14,15 @@ object QuestionData {
                 .bufferedReader()
                 .use { it.readText() }
 
-            val type = object : TypeToken<List<Question>>() {}.type
+            val type = TypeToken.getParameterized(List::class.java, Question::class.java).type
             val questions = Gson().fromJson<List<Question>>(json, type)
+                ?: throw IllegalStateException("Failed to parse questions")
+
+            // Валидация данных
+            questions.forEach { q ->
+                require(q.questionId.isNotBlank()) { "Question ID is empty" }
+                require(q.question.isNotBlank()) { "Question text is empty" }
+            }
 
             questions.groupBy { it.categoryName }
                 .mapValues { it.value.groupBy { q -> q.subcategoryName } }
