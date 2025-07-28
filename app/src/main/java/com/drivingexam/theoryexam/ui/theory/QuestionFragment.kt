@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.drivingexam.theoryexam.R
 import com.drivingexam.theoryexam.data.Question
 import com.drivingexam.theoryexam.databinding.FragmentQuestionBinding
@@ -30,6 +31,9 @@ class QuestionFragment : Fragment() {
     private lateinit var allQuestions: List<Question>
     private var currentQuestionIndex = 0
     private val selectedAnswers = mutableSetOf<String>()
+    companion object {
+        private val QUESTIONS_LIST_TYPE = object : TypeToken<List<Question>>() {}.type
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -61,8 +65,7 @@ class QuestionFragment : Fragment() {
             val questionsJson = args.getString("allQuestions")
                 ?: throw IllegalArgumentException("Questions JSON is missing")
 
-            val listType = object : TypeToken<List<Question>>() {}.type
-            allQuestions = Gson().fromJson(questionsJson, listType)
+            allQuestions = Gson().fromJson(questionsJson, QUESTIONS_LIST_TYPE)
                 ?: throw IllegalStateException("Parsed null questions list")
 
             currentQuestionIndex = allQuestions.indexOfFirst {
@@ -167,8 +170,9 @@ class QuestionFragment : Fragment() {
         try {
             when {
                 imageUrl.startsWith("http") -> {
-                    Glide.with(requireContext())
+                    Glide.with(requireContext().applicationContext)
                         .load(imageUrl)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
                         .placeholder(R.drawable.placeholder_image)
                         .error(R.drawable.error_image)
                         .listener(object : RequestListener<Drawable> {
@@ -359,6 +363,7 @@ class QuestionFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+        selectedAnswers.clear()
     }
 
     private fun getChoiceView(choiceId: String): CheckBox? {
