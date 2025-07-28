@@ -71,7 +71,7 @@ class TheoryFragment : Fragment() {
 
     private fun onCategorySelected(category: String) {
         selectedCategory = category
-        val subcategories = viewModel.getSubcategoriesForCategory(category)
+        val subcategories = viewModel.getSubcategoriesFor(category)
         (binding.rvSubcategories.adapter as? SubcategoriesAdapter)?.updateData(subcategories)
     }
 
@@ -81,30 +81,18 @@ class TheoryFragment : Fragment() {
             return
         }
 
-        val questions = try {
-            viewModel.getQuestionsForSubcategory(category, subcategory).also {
-                Log.d("QUESTIONS_DEBUG", "Loaded ${it.size} questions for $category/$subcategory")
-            }
-        } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Ошибка загрузки вопросов", Toast.LENGTH_SHORT).show()
-            return
-        }
-
+        val questions = viewModel.getQuestionsFor(category, subcategory)
         if (questions.isEmpty()) {
             Toast.makeText(requireContext(), "В этой подкатегории пока нет вопросов", Toast.LENGTH_SHORT).show()
             return
         }
 
+        Log.d("QUESTIONS_DEBUG", "Loaded ${questions.size} questions for $category/$subcategory")
         navigateToQuestion(questions.first(), questions)
     }
 
     private fun navigateToQuestion(question: Question, allQuestions: List<Question>) {
         try {
-            // Проверяем данные перед передачей
-            if (allQuestions.isEmpty()) {
-                throw IllegalStateException("Questions list is empty")
-            }
-
             val args = bundleOf(
                 "question" to question,
                 "allQuestions" to Gson().toJson(allQuestions)
@@ -117,7 +105,7 @@ class TheoryFragment : Fragment() {
             )
         } catch (e: Exception) {
             Log.e("NAV_ERROR", "Navigation failed", e)
-            Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), "Ошибка навигации", Toast.LENGTH_LONG).show()
         }
     }
 

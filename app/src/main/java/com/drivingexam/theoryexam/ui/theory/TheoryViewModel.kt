@@ -8,47 +8,58 @@ import com.drivingexam.theoryexam.data.Question
 import com.drivingexam.theoryexam.data.QuestionData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class TheoryViewModel : ViewModel() {
-    // Состояния для категорий и подкатегорий
+    // Приватные состояния
     private val _categories = MutableStateFlow<List<String>>(emptyList())
-    val categories: StateFlow<List<String>> = _categories
-
     private val _subcategories = MutableStateFlow<Map<String, List<String>>>(emptyMap())
-    val subcategories: StateFlow<Map<String, List<String>>> = _subcategories
-
     private val _questions = MutableStateFlow<Map<String, Map<String, List<Question>>>>(emptyMap())
-    val questions: StateFlow<Map<String, Map<String, List<Question>>>> = _questions
+    private val _isLoading = MutableStateFlow(false)
+    private val _error = MutableStateFlow<String?>(null)
 
-    // Загрузка данных
+    // Публичные интерфейсы для UI
+    val categories: StateFlow<List<String>> = _categories.asStateFlow()
+
     fun loadQuestions(context: Context) {
+        if (_isLoading.value) return
+
+        _isLoading.value = true
+        _error.value = null
+
         viewModelScope.launch {
-            val data = QuestionData.loadQuestions(context)
-            _questions.value = data
-            _categories.value = data.keys.toList()
+            try {
+                val data = QuestionData.loadQuestions(context)
+                _questions.value = data
+                _categories.value = data.keys.toList()
+                // Предзаполняем подкатегории для быстрого доступа
+                _subcategories.value = data.mapValues { it.value.keys.toList() }
+            } catch (e: Exception) {
+                _error.value = "Ошибка загрузки вопросов"
+                Log.e("TheoryViewModel", "Error loading questions", e)
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
-    // Получение подкатегорий для выбранной категории
-    fun getSubcategoriesForCategory(category: String): List<String> {
-        return _questions.value[category]?.keys?.toList() ?: emptyList()
+    fun getSubcategoriesFor(category: String): List<String> {
+        return _questions.value[category]?.keys?.toList().orEmpty()
     }
 
-    // Получение вопросов для подкатегории
-    fun getQuestionsForSubcategory(category: String, subcategory: String): List<Question> {
-        return _questions.value[category]?.get(subcategory)?.also { questions ->
+    fun getQuestionsFor(category: String, subcategory: String): List<Question> {
+        return _questions.value[category]?.get(subcategory).orEmpty().also { questions ->
             if (questions.isEmpty()) {
-                Log.w("QUESTIONS_CHECK", "Empty questions for $category/$subcategory")
+                Log.d("TheoryVM", "No questions for $category/$subcategory")
             }
-            questions.forEach { q ->
-                if (q.choices.isEmpty()) {
-                    Log.w("QUESTION_CHECK", "Question ${q.questionId} has no choices")
-                }
+            questions.firstOrNull { it.choices.isEmpty() }?.let {
+                Log.w("TheoryVM", "Question ${it.questionId} has no choices")
             }
-        } ?: run {
-            Log.e("QUESTIONS_CHECK", "No questions found for $category/$subcategory")
-            emptyList()
         }
+    }
+
+    fun clearError() {
+        _error.value = null
     }
 }
