@@ -13,4 +13,8 @@
     <!-- Другие строки -->
 
     <string name="question_image_desc">Илюстрация к вопросу</string>
+
+    <!-- Категории -->
+    <string name="categories_title">Област питања:</string>
+    <string name="subcategories_title">Подобласт питања:</string>
 </resources>

@@ -9,4 +9,8 @@
     <!-- Полные названия кнопок -->
     <string name="prev_question">Назад</string>
     <string name="next_question">Напред</string>
+
+    <!-- Категории -->
+    <string name="categories_title">Област питања:</string>
+    <string name="subcategories_title">Подобласт питања:</string>
 </resources>

@@ -74,4 +74,20 @@
         <item name="android:paddingBottom">4dp</item>
         <item name="android:paddingTop">8dp</item>
     </style>
+
+    <!-- Стиль для заголовков разделов -->
+    <style name="SectionHeader">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingTop">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingBottom">8dp</item>
+    </style>
+
+    <!-- Стиль для RecyclerView -->
+    <style name="CategoryRecycler">
+        <item name="android:clipToPadding">false</item>
+        <item name="android:paddingBottom">16dp</item>
+    </style>
 </resources>
