@@ -30,6 +30,8 @@ class QuestionFragment : Fragment() {
     private lateinit var currentQuestion: Question
     private lateinit var allQuestions: List<Question>
     private var currentQuestionIndex = 0
+    private var answerChecked = false
+    private var isAnswerCorrect = false
     private val selectedAnswers = mutableSetOf<String>()
     companion object {
         private val QUESTIONS_LIST_TYPE = object : TypeToken<List<Question>>() {}.type
@@ -75,6 +77,9 @@ class QuestionFragment : Fragment() {
     }
 
     private fun setupQuestion() {
+        answerChecked = false
+        isAnswerCorrect = false
+
         with(binding) {
             // Установка основных данных вопроса
             questionHeader.text = "Питање: ${currentQuestionIndex + 1}/${allQuestions.size}"
@@ -157,7 +162,7 @@ class QuestionFragment : Fragment() {
                 choicesGroup.addView(choiceView)
             }
 
-            updateChoiceViewsState()
+            updateNavigationButtons()
         }
     }
 
@@ -283,26 +288,13 @@ class QuestionFragment : Fragment() {
             return
         }
 
-        // Безопасное получение выбранного RadioButton
-        val selectedRadioButton = binding.choicesGroup.findViewById<RadioButton>(selectedId) ?: run {
-            Toast.makeText(requireContext(), "Грешка при одабиру одговора", Toast.LENGTH_SHORT).show()
-            return
-        }
+        val selectedRadioButton = binding.choicesGroup.findViewById<RadioButton>(selectedId) ?: return
+        val selectedIndex = binding.choicesGroup.indexOfChild(selectedRadioButton).takeIf { it >= 0 } ?: return
 
-        // Безопасное получение индекса
-        val selectedIndex = binding.choicesGroup.indexOfChild(selectedRadioButton).takeIf { it >= 0 } ?: run {
-            Toast.makeText(requireContext(), "Неисправан индекс одговора", Toast.LENGTH_SHORT).show()
-            return
-        }
+        if (selectedIndex >= currentQuestion.choices.size) return
 
-        // Дополнительная проверка индекса
-        if (selectedIndex >= currentQuestion.choices.size) {
-            Toast.makeText(requireContext(), "Неисправан индекс одговора", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val isCorrect = currentQuestion.choices[selectedIndex].isCorrect
-        showAnswerResult(isCorrect)
+        isAnswerCorrect = currentQuestion.choices[selectedIndex].isCorrect
+        showAnswerResult(isAnswerCorrect)
     }
 
     private fun checkMultipleChoiceAnswer() {
@@ -311,11 +303,10 @@ class QuestionFragment : Fragment() {
             return
         }
 
-        // Проверяем, что выбраны ВСЕ правильные ответы и ничего лишнего
-        val isFullyCorrect = selectedAnswers.size == currentQuestion.correctIds.size &&
+        isAnswerCorrect = selectedAnswers.size == currentQuestion.correctIds.size &&
                 selectedAnswers.containsAll(currentQuestion.correctIds)
 
-        showAnswerResult(isFullyCorrect)
+        showAnswerResult(isAnswerCorrect)
     }
 
     private fun showAnswerResult(isCorrect: Boolean) {
@@ -339,15 +330,47 @@ class QuestionFragment : Fragment() {
 
     private fun setupNavigation() {
         binding.prevButton.setOnClickListener {
-            if (currentQuestionIndex > 0) {  // Дополнительная проверка на всякий случай
+            if (currentQuestionIndex > 0) {
                 navigateToQuestion(currentQuestionIndex - 1)
             }
         }
 
         binding.nextButton.setOnClickListener {
-            if (currentQuestionIndex < allQuestions.size - 1) {
-                navigateToQuestion(currentQuestionIndex + 1)
+            if (!answerChecked) {
+                // Проверяем ответ
+                if (currentQuestion.correctIds.size > 1) {
+                    checkMultipleChoiceAnswer()
+                } else {
+                    checkSingleChoiceAnswer()
+                }
+
+                answerChecked = true
+
+                if (isAnswerCorrect) {
+                    // Если ответ верный - сразу переходим дальше
+                    if (currentQuestionIndex < allQuestions.size - 1) {
+                        navigateToQuestion(currentQuestionIndex + 1)
+                    }
+                } else {
+                    // Если неверный - подсвечиваем правильные ответы
+                    highlightCorrectAnswers()
+                    updateNavigationButtons()
+                }
+            } else {
+                // Второй клик после неверного ответа - переходим дальше
+                answerChecked = false
+                if (currentQuestionIndex < allQuestions.size - 1) {
+                    navigateToQuestion(currentQuestionIndex + 1)
+                }
             }
+        }
+    }
+
+    private fun checkAnswer() {
+        if (currentQuestion.correctIds.size > 1) {
+            checkMultipleChoiceAnswer()
+        } else {
+            checkSingleChoiceAnswer()
         }
     }
 
@@ -362,16 +385,14 @@ class QuestionFragment : Fragment() {
         val isFirstQuestion = currentQuestionIndex == 0
         val isLastQuestion = currentQuestionIndex == allQuestions.size - 1
 
-        // Кнопка "Назад"
         binding.prevButton.apply {
             visibility = if (isFirstQuestion) View.INVISIBLE else View.VISIBLE
-            isEnabled = !isFirstQuestion // Важно: активируем кнопку когда она видима
+            isEnabled = !isFirstQuestion
         }
 
-        // Кнопка "Вперед"
         binding.nextButton.apply {
-            visibility = if (isLastQuestion) View.INVISIBLE else View.VISIBLE
-            isEnabled = !isLastQuestion // Активируем когда видима
+            text = getString(R.string.next_question)
+            isEnabled = true // Кнопка всегда активна
         }
     }
 
