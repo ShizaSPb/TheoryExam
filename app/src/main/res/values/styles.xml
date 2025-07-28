@@ -35,7 +35,7 @@
     <style name="NavigationButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
         <item name="android:textSize">16sp</item>
         <item name="android:minHeight">48dp</item>
-        <item name="android:paddingVertical">12dp</item>
+        <item name="android:paddingVertical">8dp</item> <!-- Уменьшаем вертикальные отступы -->
         <item name="android:paddingHorizontal">16dp</item>
         <item name="cornerRadius">8dp</item>
         <item name="strokeWidth">1dp</item>
@@ -74,13 +74,6 @@
         <item name="android:textColor">@color/selected_item_text</item>
     </style>
 
-    <style name="QuestionHeaderStyle">
-        <item name="android:textSize">18sp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:gravity">center</item>
-        <item name="android:padding">8dp</item>
-    </style>
-
     <style name="ChoiceCheckBox" parent="Widget.MaterialComponents.CompoundButton.CheckBox">
         <item name="android:textSize">16sp</item>
         <item name="android:padding">12dp</item>
@@ -101,5 +94,18 @@
 
     <style name="ChoiceCheckBox.Limited" parent="ChoiceCheckBox">
         <item name="android:textStyle">bold|italic</item>
+    </style>
+
+    <style name="QuestionHeaderStyle">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingTop">4dp</item>
+        <item name="android:paddingBottom">8dp</item>
+    </style>
+
+    <style name="NavigationButtonsContainer">
+        <item name="android:paddingBottom">4dp</item>
+        <item name="android:paddingTop">8dp</item>
     </style>
 </resources>

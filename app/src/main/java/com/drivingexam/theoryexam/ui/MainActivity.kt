@@ -13,14 +13,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
-
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.setPadding(
                 systemBars.left,
-                systemBars.top,
+                0, // Убираем верхний отступ
                 systemBars.right,
-                systemBars.bottom
+                0  // Убираем нижний отступ
             )
             insets
         }
