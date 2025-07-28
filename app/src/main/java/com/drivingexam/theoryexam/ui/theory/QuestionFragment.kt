@@ -16,7 +16,6 @@ import android.widget.*
 import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.drivingexam.theoryexam.R
 import com.drivingexam.theoryexam.data.Question
@@ -47,6 +46,7 @@ class QuestionFragment : Fragment() {
         setupQuestion()
         setupNavigation()
         setupAnswerChecking()
+        updateNavigationButtons()
     }
 
     private fun parseArguments() {
@@ -320,7 +320,7 @@ class QuestionFragment : Fragment() {
 
     private fun setupNavigation() {
         binding.prevButton.setOnClickListener {
-            if (currentQuestionIndex > 0) {
+            if (currentQuestionIndex > 0) {  // Дополнительная проверка на всякий случай
                 navigateToQuestion(currentQuestionIndex - 1)
             }
         }
@@ -340,8 +340,20 @@ class QuestionFragment : Fragment() {
     }
 
     private fun updateNavigationButtons() {
-        binding.prevButton.isEnabled = currentQuestionIndex > 0
-        binding.nextButton.isEnabled = currentQuestionIndex < allQuestions.size - 1
+        val isFirstQuestion = currentQuestionIndex == 0
+        val isLastQuestion = currentQuestionIndex == allQuestions.size - 1
+
+        // Кнопка "Назад"
+        binding.prevButton.apply {
+            visibility = if (isFirstQuestion) View.INVISIBLE else View.VISIBLE
+            isEnabled = !isFirstQuestion // Важно: активируем кнопку когда она видима
+        }
+
+        // Кнопка "Вперед"
+        binding.nextButton.apply {
+            visibility = if (isLastQuestion) View.INVISIBLE else View.VISIBLE
+            isEnabled = !isLastQuestion // Активируем когда видима
+        }
     }
 
     override fun onDestroyView() {
