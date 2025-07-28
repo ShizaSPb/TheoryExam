@@ -6,7 +6,5 @@
     <color name="red">#FF5252</color>
 
     <!-- Цвета для выделенных элементов в темной теме -->
-    <color name="selected_item_background">#1E88E5</color>  <!-- Более темный голубой -->
-    <color name="selected_item_text">#FFFFFF</color>        <!-- Белый текст -->
     <color name="green_light">#C8E6C9</color>
 </resources>

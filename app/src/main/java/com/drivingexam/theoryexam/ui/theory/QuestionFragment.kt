@@ -283,10 +283,25 @@ class QuestionFragment : Fragment() {
             return
         }
 
-        val selectedRadioButton = binding.choicesGroup.findViewById<RadioButton>(selectedId)
-        val selectedIndex = binding.choicesGroup.indexOfChild(selectedRadioButton)
-        val isCorrect = currentQuestion.choices[selectedIndex].isCorrect
+        // Безопасное получение выбранного RadioButton
+        val selectedRadioButton = binding.choicesGroup.findViewById<RadioButton>(selectedId) ?: run {
+            Toast.makeText(requireContext(), "Грешка при одабиру одговора", Toast.LENGTH_SHORT).show()
+            return
+        }
 
+        // Безопасное получение индекса
+        val selectedIndex = binding.choicesGroup.indexOfChild(selectedRadioButton).takeIf { it >= 0 } ?: run {
+            Toast.makeText(requireContext(), "Неисправан индекс одговора", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Дополнительная проверка индекса
+        if (selectedIndex >= currentQuestion.choices.size) {
+            Toast.makeText(requireContext(), "Неисправан индекс одговора", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val isCorrect = currentQuestion.choices[selectedIndex].isCorrect
         showAnswerResult(isCorrect)
     }
 

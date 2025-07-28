@@ -76,4 +76,5 @@ dependencies {
     implementation(libs.androidx.coordinatorlayout)
     implementation (libs.glide)
     annotationProcessor (libs.compiler)
+    debugImplementation(libs.leakcanary.android)
 }

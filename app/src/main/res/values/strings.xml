@@ -5,18 +5,12 @@
     <string name="title_theory">Теория</string>
     <string name="title_exam">Экзамен</string>
     <string name="title_question">Вопрос</string>
-    <string name="question_header">Питање: %d/%d</string>
 
     <!-- Полные названия кнопок -->
     <string name="prev_question">Назад</string>
     <string name="next_question">Напред</string>
 
     <!-- Другие строки -->
-    <string name="show_answer">Прикажи одговор</string>
-    <string name="points_format">Број поена: %s</string>
-    <string name="multiple_answers_warning">Број потребних одговора: %d</string>
 
     <string name="question_image_desc">Илюстрация к вопросу</string>
-    <string name="placeholder_image">Загрузка изображения...</string>
-    <string name="error_image">Ошибка загрузки</string>
 </resources>
