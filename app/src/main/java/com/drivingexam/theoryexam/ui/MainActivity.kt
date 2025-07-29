@@ -2,9 +2,7 @@ package com.drivingexam.theoryexam.ui
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import com.drivingexam.theoryexam.R
 
 class MainActivity : AppCompatActivity() {
@@ -12,16 +10,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // 1. Отключаем автоматические отступы для системных окон
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { view, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(
-                systemBars.left,
-                0, // Убираем верхний отступ
-                systemBars.right,
-                0  // Убираем нижний отступ
-            )
-            insets
+
+        // 2. Устанавливаем светлые иконки
+        WindowCompat.getInsetsController(window, window.decorView)?.apply {
+            isAppearanceLightStatusBars = true
+            isAppearanceLightNavigationBars = true
         }
     }
 }

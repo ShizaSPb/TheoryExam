@@ -4,11 +4,19 @@
         <item name="colorPrimary">@color/purple_500</item>
         <item name="colorPrimaryVariant">@color/purple_700</item>
         <item name="colorOnPrimary">@color/white</item>
-        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
         <item name="android:windowTranslucentStatus">true</item>
         <item name="android:windowTranslucentNavigation">true</item>
         <item name="android:fitsSystemWindows">false</item>
+
+        <!-- Для статус-бара -->
         <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item> <!-- Темные иконки -->
+
+        <!-- Для навигационной панели -->
         <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightNavigationBar">true</item> <!-- Темные иконки -->
+
+        <!-- Дополнительные параметры -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
 </resources>
