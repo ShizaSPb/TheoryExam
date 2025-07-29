@@ -1,10 +1,6 @@
 package com.drivingexam.theoryexam.ui.theory
 
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.request.RequestListener
-import com.bumptech.glide.request.target.Target
-import android.graphics.drawable.Drawable
+import android.annotation.SuppressLint
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
@@ -16,8 +12,6 @@ import android.widget.*
 import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.drivingexam.theoryexam.R
 import com.drivingexam.theoryexam.data.Question
 import com.drivingexam.theoryexam.databinding.FragmentQuestionBinding
@@ -32,7 +26,10 @@ class QuestionFragment : Fragment() {
     private var currentQuestionIndex = 0
     private var answerChecked = false
     private var isAnswerCorrect = false
+    private var shuffledChoices: List<Question.Choice> = emptyList()
     private val selectedAnswers = mutableSetOf<String>()
+    private val selectedAnswersMap = mutableMapOf<String, Set<String>>()
+
     companion object {
         private val QUESTIONS_LIST_TYPE = object : TypeToken<List<Question>>() {}.type
     }
@@ -76,17 +73,16 @@ class QuestionFragment : Fragment() {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun setupQuestion() {
         answerChecked = false
         isAnswerCorrect = false
 
         with(binding) {
-            // Установка основных данных вопроса
             questionHeader.text = "Питање: ${currentQuestionIndex + 1}/${allQuestions.size}"
             questionText.text = currentQuestion.question
             pointsText.text = "Број поена: ${currentQuestion.points}"
 
-            // Настройка предупреждения о множественных ответах
             if (currentQuestion.correctIds.size > 1) {
                 multipleAnswersWarning.visibility = View.VISIBLE
                 multipleAnswersWarning.text = "Максимално ${currentQuestion.correctIds.size} одговора"
@@ -96,31 +92,32 @@ class QuestionFragment : Fragment() {
                 choicesGroup.orientation = LinearLayout.VERTICAL
             }
 
-            // Очистка предыдущих вариантов
             choicesGroup.removeAllViews()
             selectedAnswers.clear()
+            selectedAnswersMap[currentQuestion.questionId]?.let { savedAnswers ->
+                selectedAnswers.addAll(savedAnswers)
+            }
 
-            // Загрузка изображения вопроса (если есть)
             if (!currentQuestion.image.isNullOrEmpty() || !currentQuestion.imageLocal.isNullOrEmpty()) {
                 imageContainer.visibility = View.VISIBLE
                 questionImage.visibility = View.VISIBLE
                 imageProgressBar.visibility = View.VISIBLE
-
-                val imageUrl = currentQuestion.imageLocal ?: currentQuestion.image
-                loadQuestionImage(imageUrl)
+                loadQuestionImage(currentQuestion.imageLocal ?: currentQuestion.image)
             } else {
                 imageContainer.visibility = View.GONE
                 questionImage.visibility = View.GONE
                 imageProgressBar.visibility = View.GONE
             }
 
-            // Создание элементов выбора
-            currentQuestion.choices.forEach { choice ->
+            shuffledChoices = currentQuestion.choices.shuffled()
+
+            shuffledChoices.forEach { choice ->
                 val choiceView = if (currentQuestion.correctIds.size > 1) {
                     CheckBox(requireContext()).apply {
                         text = choice.answer
                         id = View.generateViewId()
                         tag = choice.id
+                        isChecked = selectedAnswers.contains(choice.id)
 
                         setOnCheckedChangeListener { buttonView, isChecked ->
                             if (isChecked) {
@@ -135,6 +132,7 @@ class QuestionFragment : Fragment() {
                                 selectedAnswers.remove(choice.id)
                                 updateChoiceViewsState()
                             }
+                            saveCurrentSelection()
                         }
                         setTextAppearance(R.style.ChoiceCheckBox)
                     }
@@ -142,18 +140,25 @@ class QuestionFragment : Fragment() {
                     RadioButton(requireContext()).apply {
                         text = choice.answer
                         id = View.generateViewId()
+                        tag = choice.id
+                        isChecked = selectedAnswers.contains(choice.id)
+
+                        setOnCheckedChangeListener { _, isChecked ->
+                            if (isChecked) {
+                                selectedAnswers.clear()
+                                selectedAnswers.add(choice.id)
+                                saveCurrentSelection()
+                            }
+                        }
                         setTextAppearance(R.style.ChoiceRadioButton)
                     }
                 }
 
-                // Общие настройки для вариантов ответа
                 choiceView.apply {
                     layoutParams = LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        bottomMargin = dpToPx(16)
-                    }
+                    ).apply { bottomMargin = dpToPx(16) }
                     setTextColor(ContextCompat.getColor(requireContext(), R.color.black))
                     setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
                     setPadding(dpToPx(16), dpToPx(12), dpToPx(16), dpToPx(12))
@@ -166,72 +171,37 @@ class QuestionFragment : Fragment() {
         }
     }
 
-    private fun loadQuestionImage(imageUrl: String?) {
-        if (imageUrl.isNullOrEmpty()) {
+    private fun saveCurrentSelection() {
+        selectedAnswersMap[currentQuestion.questionId] = selectedAnswers.toSet()
+    }
+
+    private fun loadQuestionImage(imagePath: String?) {
+        if (imagePath.isNullOrEmpty()) {
             binding.imageContainer.visibility = View.GONE
             return
         }
 
         try {
-            when {
-                imageUrl.startsWith("http") -> {
-                    Glide.with(requireContext().applicationContext)
-                        .load(imageUrl)
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .placeholder(R.drawable.placeholder_image)
-                        .error(R.drawable.error_image)
-                        .listener(object : RequestListener<Drawable> {
-                            override fun onLoadFailed(
-                                e: GlideException?,
-                                model: Any?,
-                                target: Target<Drawable>,
-                                isFirstResource: Boolean
-                            ): Boolean {
-                                binding.imageProgressBar.visibility = View.GONE
-                                return false
-                            }
+            // Нормализуем путь (заменяем обратные слеши и убираем дублирующиеся разделители)
+            val normalizedPath = imagePath.replace("\\", "/")
+                .replace("//", "/")
+                .removePrefix("/")
 
-                            override fun onResourceReady(
-                                resource: Drawable,
-                                model: Any,
-                                target: Target<Drawable>,
-                                dataSource: DataSource,
-                                isFirstResource: Boolean
-                            ): Boolean {
-                                binding.imageProgressBar.visibility = View.GONE
-                                return false
-                            }
-                        })
-                        .into(binding.questionImage)
-                }
+            // Проверяем, что путь начинается с images/
+            val assetPath = if (normalizedPath.startsWith("images/")) {
+                normalizedPath
+            } else {
+                "images/$normalizedPath"
+            }
 
-                else -> {
-                    // Обработка локальных изображений
-                    val localPath = imageUrl.replace("\\", "/") // Заменяем обратные слэши
-                    try {
-                        // Пробуем загрузить из assets
-                        val inputStream = requireContext().assets.open(localPath)
-                        val bitmap = BitmapFactory.decodeStream(inputStream)
-                        binding.questionImage.setImageBitmap(bitmap)
-                        binding.imageProgressBar.visibility = View.GONE
-                    } catch (e: Exception) {
-                        // Пробуем загрузить как ресурс
-                        val resId = resources.getIdentifier(
-                            localPath.substringBeforeLast("."), // Удаляем расширение
-                            "drawable",
-                            requireContext().packageName
-                        )
-                        if (resId != 0) {
-                            binding.questionImage.setImageResource(resId)
-                            binding.imageProgressBar.visibility = View.GONE
-                        } else {
-                            showErrorImage()
-                        }
-                    }
-                }
+            // Загружаем из assets
+            requireContext().assets.open(assetPath).use { inputStream ->
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                binding.questionImage.setImageBitmap(bitmap)
+                binding.imageProgressBar.visibility = View.GONE
             }
         } catch (e: Exception) {
-            Log.e("IMAGE_LOAD", "Error loading image: $imageUrl", e)
+            Log.e("IMAGE_LOAD", "Error loading image from assets: $imagePath", e)
             showErrorImage()
         }
     }
@@ -252,11 +222,10 @@ class QuestionFragment : Fragment() {
     private fun updateChoiceViewsState() {
         if (currentQuestion.correctIds.size <= 1) return
 
-        currentQuestion.choices.forEach { choice ->
-            getChoiceView(choice.id)?.let { view ->
+        binding.choicesGroup.children.forEach { view ->
+            if (view is CheckBox) {
                 val isSelectable = selectedAnswers.size < currentQuestion.correctIds.size ||
-                        selectedAnswers.contains(choice.id)
-
+                        selectedAnswers.contains(view.tag)
                 view.isEnabled = isSelectable
                 view.alpha = if (isSelectable) 1f else 0.5f
             }
@@ -284,129 +253,69 @@ class QuestionFragment : Fragment() {
         }
     }
 
-    private fun showCorrectAnswerAnimation(onComplete: () -> Unit) {
-        // Создаем View для анимации
-        val overlayView = LayoutInflater.from(requireContext())
-            .inflate(R.layout.correct_answer_overlay, null).apply {
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
-            }
-
-        // Добавляем к корневому View
-        (binding.root as? ViewGroup)?.addView(overlayView)
-
-        // Настраиваем начальное состояние
-        overlayView.alpha = 0f
-        overlayView.animate()
-            .alpha(1f)
-            .setDuration(300)
-            .withEndAction {
-                overlayView.animate()
-                    .alpha(0f)
-                    .setDuration(300)
-                    .setStartDelay(500)
-                    .withEndAction {
-                        (binding.root as? ViewGroup)?.removeView(overlayView)
-                        onComplete()
-                    }
-                    .start()
-            }
-            .start()
-    }
-
     private fun checkSingleChoiceAnswer() {
-        val selectedId = binding.choicesGroup.checkedRadioButtonId
-        if (selectedId == -1) {
-            // Ничего не выбрано - просто показываем правильные ответы
+        if (selectedAnswers.isEmpty()) {
             isAnswerCorrect = false
             return
         }
 
-        val selectedRadioButton = binding.choicesGroup.findViewById<RadioButton>(selectedId) ?: return
-        val selectedIndex = binding.choicesGroup.indexOfChild(selectedRadioButton).takeIf { it >= 0 } ?: return
-
-        if (selectedIndex >= currentQuestion.choices.size) return
-
-        isAnswerCorrect = currentQuestion.choices[selectedIndex].isCorrect
+        isAnswerCorrect = currentQuestion.correctIds.contains(selectedAnswers.first())
         showAnswerResult(isAnswerCorrect)
     }
 
     private fun checkMultipleChoiceAnswer() {
         if (selectedAnswers.isEmpty()) {
-            // Ничего не выбрано - просто показываем правильные ответы
             isAnswerCorrect = false
             return
         }
 
         isAnswerCorrect = selectedAnswers.size == currentQuestion.correctIds.size &&
                 selectedAnswers.containsAll(currentQuestion.correctIds)
-
         showAnswerResult(isAnswerCorrect)
     }
 
     private fun showAnswerResult(isCorrect: Boolean) {
-        if (isCorrect) {
-            Toast.makeText(requireContext(), "Тачно!", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(requireContext(), "Нетачно", Toast.LENGTH_SHORT).show()
-        }
+        Toast.makeText(
+            requireContext(),
+            if (isCorrect) "Тачно!" else "Нетачно",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun highlightCorrectAnswers() {
-        currentQuestion.choices.forEachIndexed { index, choice ->
-            val answerView = binding.choicesGroup.getChildAt(index)
-            if (choice.isCorrect) {
-                answerView.setBackgroundColor(
-                    ContextCompat.getColor(requireContext(), R.color.green_light))
+        binding.choicesGroup.children.forEachIndexed { index, view ->
+            if (index < shuffledChoices.size) {
+                val choice = shuffledChoices[index]
+                if (choice.isCorrect) {
+                    view.setBackgroundColor(
+                        ContextCompat.getColor(requireContext(), R.color.green_light))
+                }
             }
         }
     }
 
     private fun setupNavigation() {
         binding.prevButton.setOnClickListener {
+            saveCurrentSelection()
             if (currentQuestionIndex > 0) {
                 navigateToQuestion(currentQuestionIndex - 1)
             }
         }
 
         binding.nextButton.setOnClickListener {
+            saveCurrentSelection()
             if (currentQuestionIndex < allQuestions.size - 1) {
-                // Если ответ был правильным - показываем анимацию
-                if (answerChecked && isAnswerCorrect) {
-                    showCorrectAnswerAnimation {
-                        navigateToQuestion(currentQuestionIndex + 1)
-                    }
-                } else {
-                    navigateToQuestion(currentQuestionIndex + 1)
-                }
+                navigateToQuestion(currentQuestionIndex + 1)
             }
         }
     }
 
-    private fun hasUserSelectedAnswer(): Boolean {
-        return if (currentQuestion.correctIds.size > 1) {
-            selectedAnswers.isNotEmpty()
-        } else {
-            binding.choicesGroup.checkedRadioButtonId != -1
-        }
-    }
-
-    private fun checkAnswer() {
-        if (currentQuestion.correctIds.size > 1) {
-            checkMultipleChoiceAnswer()
-        } else {
-            checkSingleChoiceAnswer()
-        }
-    }
-
     private fun navigateToQuestion(index: Int) {
+        saveCurrentSelection()
         currentQuestionIndex = index
         currentQuestion = allQuestions[index]
         answerChecked = false
         isAnswerCorrect = false
-        selectedAnswers.clear()
         setupQuestion()
     }
 
@@ -414,25 +323,16 @@ class QuestionFragment : Fragment() {
         val isFirstQuestion = currentQuestionIndex == 0
         val isLastQuestion = currentQuestionIndex == allQuestions.size - 1
 
-        // Кнопка "Назад"
         binding.prevButton.apply {
             visibility = if (isFirstQuestion) View.INVISIBLE else View.VISIBLE
             isEnabled = !isFirstQuestion
         }
 
-        // Кнопка "Напред" - просто скрываем на последнем вопросе
         binding.nextButton.visibility = if (isLastQuestion) View.INVISIBLE else View.VISIBLE
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-        selectedAnswers.clear()
-    }
-
-    private fun getChoiceView(choiceId: String): CheckBox? {
-        return binding.choicesGroup.children
-            .filterIsInstance<CheckBox>()
-            .firstOrNull { it.tag == choiceId }
     }
 }

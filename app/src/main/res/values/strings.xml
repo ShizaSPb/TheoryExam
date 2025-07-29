@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Теория ПДД</string>
-    <string name="title_home">Главная</string>
-    <string name="title_theory">Теория</string>
-    <string name="title_exam">Экзамен</string>
-    <string name="title_question">Вопрос</string>
+    <string name="app_name">Теоријски испит</string>
+    <string name="title_home">Главна</string>
+    <string name="title_theory">Питања за ТИ - вежбање</string>
+    <string name="title_exam">Симулација полагања ТИ</string>
+    <string name="title_question">Питање</string>
 
     <!-- Полные названия кнопок -->
     <string name="prev_question">Назад</string>

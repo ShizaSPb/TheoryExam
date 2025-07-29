@@ -17,11 +17,15 @@ data class Question(
     @SerializedName("image_local") val imageLocal: String? = null,
     val choices: List<Choice>,
     @SerializedName("correct_ids") val correctIds: List<String> = emptyList()
-) : Parcelable
+    ) : Parcelable {
+    fun getShuffledChoices(): List<Choice> {
+        return choices.shuffled()
+    }
 
-@Parcelize
-data class Choice(
-    val id: String,
-    val answer: String,
-    @SerializedName("is_correct") val isCorrect: Boolean = false
-) : Parcelable
+    @Parcelize
+    data class Choice(
+        val id: String,
+        val answer: String,
+        @SerializedName("is_correct") val isCorrect: Boolean = false
+    ) : Parcelable
+}
