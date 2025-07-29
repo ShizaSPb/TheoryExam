@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#4CAF50"
-    android:visibility="gone">
+    android:elevation="10dp">
 
     <ImageView
         android:layout_width="120dp"
@@ -11,5 +11,4 @@
         android:layout_gravity="center"
         android:src="@drawable/ic_check_circle"
         android:tint="@android:color/white"/>
-
 </FrameLayout>

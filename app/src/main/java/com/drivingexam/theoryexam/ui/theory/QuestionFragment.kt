@@ -278,12 +278,42 @@ class QuestionFragment : Fragment() {
             } else {
                 checkSingleChoiceAnswer()
             }
-
-            // Всегда подсвечиваем правильные ответы при нажатии "Прикажи одговор"
             highlightCorrectAnswers()
             answerChecked = true
-            updateNavigationButtons()
+            isAnswerCorrect = selectedAnswers.containsAll(currentQuestion.correctIds)
         }
+    }
+
+    private fun showCorrectAnswerAnimation(onComplete: () -> Unit) {
+        // Создаем View для анимации
+        val overlayView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.correct_answer_overlay, null).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            }
+
+        // Добавляем к корневому View
+        (binding.root as? ViewGroup)?.addView(overlayView)
+
+        // Настраиваем начальное состояние
+        overlayView.alpha = 0f
+        overlayView.animate()
+            .alpha(1f)
+            .setDuration(300)
+            .withEndAction {
+                overlayView.animate()
+                    .alpha(0f)
+                    .setDuration(300)
+                    .setStartDelay(500)
+                    .withEndAction {
+                        (binding.root as? ViewGroup)?.removeView(overlayView)
+                        onComplete()
+                    }
+                    .start()
+            }
+            .start()
     }
 
     private fun checkSingleChoiceAnswer() {
@@ -342,23 +372,15 @@ class QuestionFragment : Fragment() {
         }
 
         binding.nextButton.setOnClickListener {
-            if (!answerChecked && hasUserSelectedAnswer()) {
-                // Если ответ не проверен и есть выбор - проверяем
-                checkAnswer()
-                answerChecked = true
-
-                if (!isAnswerCorrect) {
-                    // Если ответ неверный - подсвечиваем правильные
-                    highlightCorrectAnswers()
-                    updateNavigationButtons()
-                    return@setOnClickListener
-                }
-                // Если ответ верный - продолжаем выполнение (переход)
-            }
-
-            // Переход к следующему вопросу
             if (currentQuestionIndex < allQuestions.size - 1) {
-                navigateToQuestion(currentQuestionIndex + 1)
+                // Если ответ был правильным - показываем анимацию
+                if (answerChecked && isAnswerCorrect) {
+                    showCorrectAnswerAnimation {
+                        navigateToQuestion(currentQuestionIndex + 1)
+                    }
+                } else {
+                    navigateToQuestion(currentQuestionIndex + 1)
+                }
             }
         }
     }
@@ -382,11 +404,10 @@ class QuestionFragment : Fragment() {
     private fun navigateToQuestion(index: Int) {
         currentQuestionIndex = index
         currentQuestion = allQuestions[index]
-        answerChecked = false // Сбрасываем флаг проверки ответа
+        answerChecked = false
         isAnswerCorrect = false
         selectedAnswers.clear()
         setupQuestion()
-        updateNavigationButtons()
     }
 
     private fun updateNavigationButtons() {

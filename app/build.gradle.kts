@@ -77,4 +77,5 @@ dependencies {
     implementation (libs.glide)
     annotationProcessor (libs.compiler)
     debugImplementation(libs.leakcanary.android)
+    implementation(libs.androidx.appcompat)
 }
