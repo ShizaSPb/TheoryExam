@@ -31,10 +31,17 @@ class TheoryViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val data = QuestionData.loadQuestions(context)
-                _questions.value = data
-                _categories.value = data.keys.toList()
-                // Предзаполняем подкатегории для быстрого доступа
-                _subcategories.value = data.mapValues { it.value.keys.toList() }
+                // Сбрасываем флаги isAnswered для всех вопросов
+                val resetData = data.mapValues { category ->
+                    category.value.mapValues { subcategory ->
+                        subcategory.value.map { question ->
+                            question.copy(isAnswered = false)
+                        }
+                    }
+                }
+                _questions.value = resetData
+                _categories.value = resetData.keys.toList()
+                _subcategories.value = resetData.mapValues { it.value.keys.toList() }
             } catch (e: Exception) {
                 _error.value = "Ошибка загрузки вопросов"
                 Log.e("TheoryViewModel", "Error loading questions", e)

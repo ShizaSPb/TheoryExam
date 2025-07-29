@@ -55,4 +55,9 @@ object QuestionData {
     fun clearCache() {
         cachedQuestions = null
     }
+
+    suspend fun reloadQuestions(context: Context): Map<String, Map<String, List<Question>>> {
+        cachedQuestions = null // Очищаем кэш перед повторной загрузкой
+        return loadQuestions(context)
+    }
 }
