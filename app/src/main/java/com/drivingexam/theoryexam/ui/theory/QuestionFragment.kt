@@ -1,6 +1,7 @@
 package com.drivingexam.theoryexam.ui.theory
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
@@ -29,6 +30,9 @@ class QuestionFragment : Fragment() {
     private var shuffledChoices: List<Question.Choice> = emptyList()
     private val selectedAnswers = mutableSetOf<String>()
     private val selectedAnswersMap = mutableMapOf<String, Set<String>>()
+    private var totalPoints = 0
+    private var maxPossiblePoints = 0
+    private var currentSessionPoints = 0
 
     companion object {
         private val QUESTIONS_LIST_TYPE = object : TypeToken<List<Question>>() {}.type
@@ -50,6 +54,8 @@ class QuestionFragment : Fragment() {
         setupNavigation()
         setupAnswerChecking()
         updateNavigationButtons()
+        val prefs = requireContext().getSharedPreferences("progress", Context.MODE_PRIVATE)
+        currentSessionPoints = prefs.getInt("currentPoints", 0)
     }
 
     private fun parseArguments() {
@@ -169,6 +175,19 @@ class QuestionFragment : Fragment() {
 
             updateNavigationButtons()
         }
+        calculateMaxPoints()
+        updateProgress()
+    }
+
+    private fun calculateMaxPoints() {
+        maxPossiblePoints = allQuestions.sumOf { it.points.toInt() }
+        binding.tvMaxPoints.text = maxPossiblePoints.toString()
+        binding.progressBar.max = maxPossiblePoints
+    }
+
+    private fun updateProgress() {
+        binding.tvCurrentPoints.text = currentSessionPoints.toString()
+        binding.progressBar.progress = currentSessionPoints
     }
 
     private fun saveCurrentSelection() {
@@ -249,7 +268,13 @@ class QuestionFragment : Fragment() {
             }
             highlightCorrectAnswers()
             answerChecked = true
-            isAnswerCorrect = selectedAnswers.containsAll(currentQuestion.correctIds)
+
+            if (isAnswerCorrect && !currentQuestion.isAnswered) {
+                currentSessionPoints += currentQuestion.points.toInt()
+                currentQuestion.isAnswered = true
+                updateProgress()
+            }
+            // Убрали вызов showAnswerResult()
         }
     }
 
@@ -258,9 +283,7 @@ class QuestionFragment : Fragment() {
             isAnswerCorrect = false
             return
         }
-
         isAnswerCorrect = currentQuestion.correctIds.contains(selectedAnswers.first())
-        showAnswerResult(isAnswerCorrect)
     }
 
     private fun checkMultipleChoiceAnswer() {
@@ -268,10 +291,8 @@ class QuestionFragment : Fragment() {
             isAnswerCorrect = false
             return
         }
-
         isAnswerCorrect = selectedAnswers.size == currentQuestion.correctIds.size &&
                 selectedAnswers.containsAll(currentQuestion.correctIds)
-        showAnswerResult(isAnswerCorrect)
     }
 
     private fun showAnswerResult(isCorrect: Boolean) {
@@ -334,5 +355,11 @@ class QuestionFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onPause() {
+        super.onPause()
+        val prefs = requireContext().getSharedPreferences("progress", Context.MODE_PRIVATE)
+        prefs.edit().putInt("currentPoints", currentSessionPoints).apply()
     }
 }

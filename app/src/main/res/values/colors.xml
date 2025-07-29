@@ -26,4 +26,6 @@
     <!-- Фоны и текст подкатегорий -->
     <color name="subcategory_bg">#E8F5E9</color>
     <color name="subcategory_text">#1B5E20</color>
+    <color name="green_dark">#2E7D32</color>
+    <color name="grey">#EEEEEE</color>
 </resources>

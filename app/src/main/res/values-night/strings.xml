@@ -13,4 +13,5 @@
     <!-- Категории -->
     <string name="categories_title">Област питања:</string>
     <string name="subcategories_title">Подобласт питања:</string>
+    <string name="progress_title">Прогрес</string>
 </resources>

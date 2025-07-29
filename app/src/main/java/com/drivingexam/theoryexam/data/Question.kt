@@ -14,6 +14,7 @@ data class Question(
     val question: String,
     val points: String,
     val image: String? = null,
+    var isAnswered: Boolean = false,
     @SerializedName("image_local") val imageLocal: String? = null,
     val choices: List<Choice>,
     @SerializedName("correct_ids") val correctIds: List<String> = emptyList()
