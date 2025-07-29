@@ -82,11 +82,21 @@ class QuestionFragment : Fragment() {
         answerChecked = false
         isAnswerCorrect = false
 
+        // Сбрасываем состояние кнопки проверки ответа
+        with(binding.checkAnswerButton) {
+            text = getString(R.string.check_answer)
+            isEnabled = true
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.white))
+            backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.purple_500)
+        }
+
         with(binding) {
+            // Обновляем заголовок с номером вопроса
             questionHeader.text = "Питање: ${currentQuestionIndex + 1}/${allQuestions.size}"
             questionText.text = currentQuestion.question
             pointsText.text = "Број поена: ${currentQuestion.points}"
 
+            // Настройка предупреждения о множественных ответах
             if (currentQuestion.correctIds.size > 1) {
                 multipleAnswersWarning.visibility = View.VISIBLE
                 multipleAnswersWarning.text = "Максимално ${currentQuestion.correctIds.size} одговора"
@@ -96,12 +106,16 @@ class QuestionFragment : Fragment() {
                 choicesGroup.orientation = LinearLayout.VERTICAL
             }
 
+            // Очищаем предыдущие варианты ответов
             choicesGroup.removeAllViews()
             selectedAnswers.clear()
+
+            // Восстанавливаем сохраненные ответы для этого вопроса
             selectedAnswersMap[currentQuestion.questionId]?.let { savedAnswers ->
                 selectedAnswers.addAll(savedAnswers)
             }
 
+            // Загрузка изображения вопроса (если есть)
             if (!currentQuestion.image.isNullOrEmpty() || !currentQuestion.imageLocal.isNullOrEmpty()) {
                 imageContainer.visibility = View.VISIBLE
                 questionImage.visibility = View.VISIBLE
@@ -113,8 +127,10 @@ class QuestionFragment : Fragment() {
                 imageProgressBar.visibility = View.GONE
             }
 
-            shuffledChoices = currentQuestion.choices.shuffled()
+            // Перемешиваем варианты ответов
+            shuffledChoices = currentQuestion.getShuffledChoices()
 
+            // Создаем элементы интерфейса для каждого варианта ответа
             shuffledChoices.forEach { choice ->
                 val choiceView = if (currentQuestion.correctIds.size > 1) {
                     CheckBox(requireContext()).apply {
@@ -158,11 +174,14 @@ class QuestionFragment : Fragment() {
                     }
                 }
 
+                // Настройка внешнего вида варианта ответа
                 choiceView.apply {
                     layoutParams = LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT
-                    ).apply { bottomMargin = dpToPx(16) }
+                    ).apply {
+                        bottomMargin = dpToPx(16)
+                    }
                     setTextColor(ContextCompat.getColor(requireContext(), R.color.black))
                     setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
                     setPadding(dpToPx(16), dpToPx(12), dpToPx(16), dpToPx(12))
@@ -171,8 +190,11 @@ class QuestionFragment : Fragment() {
                 choicesGroup.addView(choiceView)
             }
 
+            // Обновляем состояние кнопок навигации
             updateNavigationButtons()
         }
+
+        // Обновляем прогресс-бар
         calculateMaxPoints()
         updateProgress()
     }
@@ -260,7 +282,7 @@ class QuestionFragment : Fragment() {
     private fun setupAnswerChecking() {
         binding.checkAnswerButton.setOnClickListener {
             if (answerChecked) {
-                return@setOnClickListener // Используем qualified return
+                return@setOnClickListener
             }
 
             if (currentQuestion.correctIds.size > 1) {
@@ -278,15 +300,20 @@ class QuestionFragment : Fragment() {
             }
 
             // Обновляем кнопку после проверки
-            binding.checkAnswerButton.apply {
-                text = if (isAnswerCorrect) "✓ Тачно" else "✗ Нетачно"
-                isEnabled = false
-                setTextColor(ContextCompat.getColor(requireContext(),
-                    if (isAnswerCorrect) R.color.green_dark else R.color.red))
-            }
+            updateCheckAnswerButton()
         }
     }
 
+    private fun updateCheckAnswerButton() {
+        binding.checkAnswerButton.apply {
+            text = if (isAnswerCorrect) "✓ Тачно" else "✗ Нетачно"
+            isEnabled = false
+            setTextColor(ContextCompat.getColor(requireContext(),
+                if (isAnswerCorrect) R.color.white else R.color.white))
+            backgroundTintList = ContextCompat.getColorStateList(requireContext(),
+                if (isAnswerCorrect) R.color.green_dark else R.color.red)
+        }
+    }
 
     private fun checkSingleChoiceAnswer() {
         if (selectedAnswers.isEmpty()) {
