@@ -16,6 +16,7 @@
     <style name="CheckAnswerButton" parent="ButtonStyle">
         <item name="backgroundTint">@color/purple_500</item>
         <item name="android:textColor">@color/white</item>
+        <item name="android:state_enabled">false</item>
     </style>
 
     <!-- Базовый стиль для кнопок навигации -->

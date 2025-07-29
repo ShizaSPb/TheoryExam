@@ -54,8 +54,6 @@ class QuestionFragment : Fragment() {
         setupNavigation()
         setupAnswerChecking()
         updateNavigationButtons()
-        val prefs = requireContext().getSharedPreferences("progress", Context.MODE_PRIVATE)
-        currentSessionPoints = prefs.getInt("currentPoints", 0)
     }
 
     private fun parseArguments() {
@@ -261,6 +259,10 @@ class QuestionFragment : Fragment() {
 
     private fun setupAnswerChecking() {
         binding.checkAnswerButton.setOnClickListener {
+            if (answerChecked) {
+                return@setOnClickListener // Используем qualified return
+            }
+
             if (currentQuestion.correctIds.size > 1) {
                 checkMultipleChoiceAnswer()
             } else {
@@ -274,9 +276,17 @@ class QuestionFragment : Fragment() {
                 currentQuestion.isAnswered = true
                 updateProgress()
             }
-            // Убрали вызов showAnswerResult()
+
+            // Обновляем кнопку после проверки
+            binding.checkAnswerButton.apply {
+                text = if (isAnswerCorrect) "✓ Тачно" else "✗ Нетачно"
+                isEnabled = false
+                setTextColor(ContextCompat.getColor(requireContext(),
+                    if (isAnswerCorrect) R.color.green_dark else R.color.red))
+            }
         }
     }
+
 
     private fun checkSingleChoiceAnswer() {
         if (selectedAnswers.isEmpty()) {
@@ -293,14 +303,6 @@ class QuestionFragment : Fragment() {
         }
         isAnswerCorrect = selectedAnswers.size == currentQuestion.correctIds.size &&
                 selectedAnswers.containsAll(currentQuestion.correctIds)
-    }
-
-    private fun showAnswerResult(isCorrect: Boolean) {
-        Toast.makeText(
-            requireContext(),
-            if (isCorrect) "Тачно!" else "Нетачно",
-            Toast.LENGTH_SHORT
-        ).show()
     }
 
     private fun highlightCorrectAnswers() {
@@ -357,9 +359,5 @@ class QuestionFragment : Fragment() {
         _binding = null
     }
 
-    override fun onPause() {
-        super.onPause()
-        val prefs = requireContext().getSharedPreferences("progress", Context.MODE_PRIVATE)
-        prefs.edit().putInt("currentPoints", currentSessionPoints).apply()
-    }
+
 }
